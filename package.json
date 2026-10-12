@@ -1,0 +1,717 @@
+{
+  "name": "@snyder-tech/keiretsu",
+  "version": "0.44.11",
+  "description": "Keiretsu commercial interoperability standard: Effect-first, strongly typed records for intercompany work, billing, costing, FX, transfer pricing, tax incentives and signed exchange between companies.",
+  "keywords": [
+    "cost-accounting",
+    "decimal",
+    "effect",
+    "fx",
+    "intercompany",
+    "jcs",
+    "keiretsu",
+    "money",
+    "tax-incentives",
+    "transfer-pricing",
+    "value-based-billing"
+  ],
+  "homepage": "https://github.com/snyder-tech/keiretsu#readme",
+  "bugs": {
+    "url": "https://github.com/snyder-tech/keiretsu/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snyder-tech/keiretsu.git"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "src/**/*.ts",
+    "!src/**/*.test.ts",
+    "docs/*.md",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./package.json": "./package.json",
+    "./commerce/Agreement": {
+      "types": "./dist/commerce/Agreement.d.ts",
+      "default": "./dist/commerce/Agreement.js"
+    },
+    "./commerce/BillingMode": {
+      "types": "./dist/commerce/BillingMode.d.ts",
+      "default": "./dist/commerce/BillingMode.js"
+    },
+    "./commerce/BillingPolicy": {
+      "types": "./dist/commerce/BillingPolicy.d.ts",
+      "default": "./dist/commerce/BillingPolicy.js"
+    },
+    "./commerce/CapacityHoldCheck": {
+      "types": "./dist/commerce/CapacityHoldCheck.d.ts",
+      "default": "./dist/commerce/CapacityHoldCheck.js"
+    },
+    "./commerce/CapacityTerms": {
+      "types": "./dist/commerce/CapacityTerms.d.ts",
+      "default": "./dist/commerce/CapacityTerms.js"
+    },
+    "./commerce/Charge": {
+      "types": "./dist/commerce/Charge.d.ts",
+      "default": "./dist/commerce/Charge.js"
+    },
+    "./commerce/ChargeLine": {
+      "types": "./dist/commerce/ChargeLine.d.ts",
+      "default": "./dist/commerce/ChargeLine.js"
+    },
+    "./commerce/Code": {
+      "types": "./dist/commerce/Code.d.ts",
+      "default": "./dist/commerce/Code.js"
+    },
+    "./commerce/CommerceIds": {
+      "types": "./dist/commerce/CommerceIds.d.ts",
+      "default": "./dist/commerce/CommerceIds.js"
+    },
+    "./commerce/DividendAllocation": {
+      "types": "./dist/commerce/DividendAllocation.d.ts",
+      "default": "./dist/commerce/DividendAllocation.js"
+    },
+    "./commerce/FxPort": {
+      "types": "./dist/commerce/FxPort.d.ts",
+      "default": "./dist/commerce/FxPort.js"
+    },
+    "./commerce/Invariant": {
+      "types": "./dist/commerce/Invariant.d.ts",
+      "default": "./dist/commerce/Invariant.js"
+    },
+    "./commerce/Invoice": {
+      "types": "./dist/commerce/Invoice.d.ts",
+      "default": "./dist/commerce/Invoice.js"
+    },
+    "./commerce/InvoiceAssembly": {
+      "types": "./dist/commerce/InvoiceAssembly.d.ts",
+      "default": "./dist/commerce/InvoiceAssembly.js"
+    },
+    "./commerce/LegDisclosure": {
+      "types": "./dist/commerce/LegDisclosure.d.ts",
+      "default": "./dist/commerce/LegDisclosure.js"
+    },
+    "./commerce/Numbering": {
+      "types": "./dist/commerce/Numbering.d.ts",
+      "default": "./dist/commerce/Numbering.js"
+    },
+    "./commerce/Offering": {
+      "types": "./dist/commerce/Offering.d.ts",
+      "default": "./dist/commerce/Offering.js"
+    },
+    "./commerce/Party": {
+      "types": "./dist/commerce/Party.d.ts",
+      "default": "./dist/commerce/Party.js"
+    },
+    "./commerce/PriceBook": {
+      "types": "./dist/commerce/PriceBook.d.ts",
+      "default": "./dist/commerce/PriceBook.js"
+    },
+    "./commerce/RateCard": {
+      "types": "./dist/commerce/RateCard.d.ts",
+      "default": "./dist/commerce/RateCard.js"
+    },
+    "./commerce/ResaleMarginRule": {
+      "types": "./dist/commerce/ResaleMarginRule.d.ts",
+      "default": "./dist/commerce/ResaleMarginRule.js"
+    },
+    "./commerce/RouteBinding": {
+      "types": "./dist/commerce/RouteBinding.d.ts",
+      "default": "./dist/commerce/RouteBinding.js"
+    },
+    "./commerce/RouteView": {
+      "types": "./dist/commerce/RouteView.d.ts",
+      "default": "./dist/commerce/RouteView.js"
+    },
+    "./commerce/TaxLine": {
+      "types": "./dist/commerce/TaxLine.d.ts",
+      "default": "./dist/commerce/TaxLine.js"
+    },
+    "./commerce/TransferAllocation": {
+      "types": "./dist/commerce/TransferAllocation.d.ts",
+      "default": "./dist/commerce/TransferAllocation.js"
+    },
+    "./commerce/TransferRoute": {
+      "types": "./dist/commerce/TransferRoute.d.ts",
+      "default": "./dist/commerce/TransferRoute.js"
+    },
+    "./commerce/Withholding": {
+      "types": "./dist/commerce/Withholding.d.ts",
+      "default": "./dist/commerce/Withholding.js"
+    },
+    "./commerce/WorkObjectRef": {
+      "types": "./dist/commerce/WorkObjectRef.d.ts",
+      "default": "./dist/commerce/WorkObjectRef.js"
+    },
+    "./core/Actor": {
+      "types": "./dist/core/Actor.d.ts",
+      "default": "./dist/core/Actor.js"
+    },
+    "./core/Allocation": {
+      "types": "./dist/core/Allocation.d.ts",
+      "default": "./dist/core/Allocation.js"
+    },
+    "./core/CanonicalJson": {
+      "types": "./dist/core/CanonicalJson.d.ts",
+      "default": "./dist/core/CanonicalJson.js"
+    },
+    "./core/Country": {
+      "types": "./dist/core/Country.d.ts",
+      "default": "./dist/core/Country.js"
+    },
+    "./core/Currency": {
+      "types": "./dist/core/Currency.d.ts",
+      "default": "./dist/core/Currency.js"
+    },
+    "./core/Decimal": {
+      "types": "./dist/core/Decimal.d.ts",
+      "default": "./dist/core/Decimal.js"
+    },
+    "./core/Derivation": {
+      "types": "./dist/core/Derivation.d.ts",
+      "default": "./dist/core/Derivation.js"
+    },
+    "./core/Envelope": {
+      "types": "./dist/core/Envelope.d.ts",
+      "default": "./dist/core/Envelope.js"
+    },
+    "./core/Hold": {
+      "types": "./dist/core/Hold.d.ts",
+      "default": "./dist/core/Hold.js"
+    },
+    "./core/Id": {
+      "types": "./dist/core/Id.d.ts",
+      "default": "./dist/core/Id.js"
+    },
+    "./core/Ids": {
+      "types": "./dist/core/Ids.d.ts",
+      "default": "./dist/core/Ids.js"
+    },
+    "./core/Iso4217Data": {
+      "types": "./dist/core/Iso4217Data.d.ts",
+      "default": "./dist/core/Iso4217Data.js"
+    },
+    "./core/Issue": {
+      "types": "./dist/core/Issue.d.ts",
+      "default": "./dist/core/Issue.js"
+    },
+    "./core/Money": {
+      "types": "./dist/core/Money.d.ts",
+      "default": "./dist/core/Money.js"
+    },
+    "./core/PartyRef": {
+      "types": "./dist/core/PartyRef.d.ts",
+      "default": "./dist/core/PartyRef.js"
+    },
+    "./core/Rounding": {
+      "types": "./dist/core/Rounding.d.ts",
+      "default": "./dist/core/Rounding.js"
+    },
+    "./core/Temporal": {
+      "types": "./dist/core/Temporal.d.ts",
+      "default": "./dist/core/Temporal.js"
+    },
+    "./entity/Availability": {
+      "types": "./dist/entity/Availability.d.ts",
+      "default": "./dist/entity/Availability.js"
+    },
+    "./entity/Brand": {
+      "types": "./dist/entity/Brand.d.ts",
+      "default": "./dist/entity/Brand.js"
+    },
+    "./entity/Control": {
+      "types": "./dist/entity/Control.d.ts",
+      "default": "./dist/entity/Control.js"
+    },
+    "./entity/Counterparty": {
+      "types": "./dist/entity/Counterparty.d.ts",
+      "default": "./dist/entity/Counterparty.js"
+    },
+    "./entity/Engagement": {
+      "types": "./dist/entity/Engagement.d.ts",
+      "default": "./dist/entity/Engagement.js"
+    },
+    "./entity/GraphInvariants": {
+      "types": "./dist/entity/GraphInvariants.d.ts",
+      "default": "./dist/entity/GraphInvariants.js"
+    },
+    "./entity/Identifier": {
+      "types": "./dist/entity/Identifier.d.ts",
+      "default": "./dist/entity/Identifier.js"
+    },
+    "./entity/Invariants": {
+      "types": "./dist/entity/Invariants.d.ts",
+      "default": "./dist/entity/Invariants.js"
+    },
+    "./entity/Keiretsu": {
+      "types": "./dist/entity/Keiretsu.d.ts",
+      "default": "./dist/entity/Keiretsu.js"
+    },
+    "./entity/KeiretsuInput": {
+      "types": "./dist/entity/KeiretsuInput.d.ts",
+      "default": "./dist/entity/KeiretsuInput.js"
+    },
+    "./entity/LegalEntity": {
+      "types": "./dist/entity/LegalEntity.d.ts",
+      "default": "./dist/entity/LegalEntity.js"
+    },
+    "./entity/Model": {
+      "types": "./dist/entity/Model.d.ts",
+      "default": "./dist/entity/Model.js"
+    },
+    "./entity/Ownership": {
+      "types": "./dist/entity/Ownership.d.ts",
+      "default": "./dist/entity/Ownership.js"
+    },
+    "./entity/PeopleInvariants": {
+      "types": "./dist/entity/PeopleInvariants.d.ts",
+      "default": "./dist/entity/PeopleInvariants.js"
+    },
+    "./entity/Person": {
+      "types": "./dist/entity/Person.d.ts",
+      "default": "./dist/entity/Person.js"
+    },
+    "./entity/Pseudonym": {
+      "types": "./dist/entity/Pseudonym.d.ts",
+      "default": "./dist/entity/Pseudonym.js"
+    },
+    "./entity/RegimePack": {
+      "types": "./dist/entity/RegimePack.d.ts",
+      "default": "./dist/entity/RegimePack.js"
+    },
+    "./entity/SystemOfRecord": {
+      "types": "./dist/entity/SystemOfRecord.d.ts",
+      "default": "./dist/entity/SystemOfRecord.js"
+    },
+    "./entity/TaxGroup": {
+      "types": "./dist/entity/TaxGroup.d.ts",
+      "default": "./dist/entity/TaxGroup.js"
+    },
+    "./entity/Timeline": {
+      "types": "./dist/entity/Timeline.d.ts",
+      "default": "./dist/entity/Timeline.js"
+    },
+    "./entity/WorkCalendar": {
+      "types": "./dist/entity/WorkCalendar.d.ts",
+      "default": "./dist/entity/WorkCalendar.js"
+    },
+    "./exchange/Bundle": {
+      "types": "./dist/exchange/Bundle.d.ts",
+      "default": "./dist/exchange/Bundle.js"
+    },
+    "./exchange/CloudEvents": {
+      "types": "./dist/exchange/CloudEvents.d.ts",
+      "default": "./dist/exchange/CloudEvents.js"
+    },
+    "./exchange/Disclosure": {
+      "types": "./dist/exchange/Disclosure.d.ts",
+      "default": "./dist/exchange/Disclosure.js"
+    },
+    "./exchange/Invariants": {
+      "types": "./dist/exchange/Invariants.d.ts",
+      "default": "./dist/exchange/Invariants.js"
+    },
+    "./exchange/Jws": {
+      "types": "./dist/exchange/Jws.d.ts",
+      "default": "./dist/exchange/Jws.js"
+    },
+    "./exchange/KeyResolver": {
+      "types": "./dist/exchange/KeyResolver.d.ts",
+      "default": "./dist/exchange/KeyResolver.js"
+    },
+    "./exchange/Merkle": {
+      "types": "./dist/exchange/Merkle.d.ts",
+      "default": "./dist/exchange/Merkle.js"
+    },
+    "./exchange/Party": {
+      "types": "./dist/exchange/Party.d.ts",
+      "default": "./dist/exchange/Party.js"
+    },
+    "./exchange/Receipt": {
+      "types": "./dist/exchange/Receipt.d.ts",
+      "default": "./dist/exchange/Receipt.js"
+    },
+    "./exchange/Receiver": {
+      "types": "./dist/exchange/Receiver.d.ts",
+      "default": "./dist/exchange/Receiver.js"
+    },
+    "./exchange/Sequence": {
+      "types": "./dist/exchange/Sequence.d.ts",
+      "default": "./dist/exchange/Sequence.js"
+    },
+    "./exchange/SpecVersion": {
+      "types": "./dist/exchange/SpecVersion.d.ts",
+      "default": "./dist/exchange/SpecVersion.js"
+    },
+    "./exchange/Transport": {
+      "types": "./dist/exchange/Transport.d.ts",
+      "default": "./dist/exchange/Transport.js"
+    },
+    "./exchange/Verify": {
+      "types": "./dist/exchange/Verify.d.ts",
+      "default": "./dist/exchange/Verify.js"
+    },
+    "./finance/AllocationRule": {
+      "types": "./dist/finance/AllocationRule.d.ts",
+      "default": "./dist/finance/AllocationRule.js"
+    },
+    "./finance/ArmsLength": {
+      "types": "./dist/finance/ArmsLength.d.ts",
+      "default": "./dist/finance/ArmsLength.js"
+    },
+    "./finance/Benchmark": {
+      "types": "./dist/finance/Benchmark.d.ts",
+      "default": "./dist/finance/Benchmark.js"
+    },
+    "./finance/ChartMapping": {
+      "types": "./dist/finance/ChartMapping.d.ts",
+      "default": "./dist/finance/ChartMapping.js"
+    },
+    "./finance/CloseProfile": {
+      "types": "./dist/finance/CloseProfile.d.ts",
+      "default": "./dist/finance/CloseProfile.js"
+    },
+    "./finance/CostAssessment": {
+      "types": "./dist/finance/CostAssessment.d.ts",
+      "default": "./dist/finance/CostAssessment.js"
+    },
+    "./finance/CostBaseDefinition": {
+      "types": "./dist/finance/CostBaseDefinition.d.ts",
+      "default": "./dist/finance/CostBaseDefinition.js"
+    },
+    "./finance/CostObject": {
+      "types": "./dist/finance/CostObject.d.ts",
+      "default": "./dist/finance/CostObject.js"
+    },
+    "./finance/CostPool": {
+      "types": "./dist/finance/CostPool.d.ts",
+      "default": "./dist/finance/CostPool.js"
+    },
+    "./finance/CostSnapshot": {
+      "types": "./dist/finance/CostSnapshot.d.ts",
+      "default": "./dist/finance/CostSnapshot.js"
+    },
+    "./finance/HledgerRender": {
+      "types": "./dist/finance/HledgerRender.d.ts",
+      "default": "./dist/finance/HledgerRender.js"
+    },
+    "./finance/IntercompanyLoan": {
+      "types": "./dist/finance/IntercompanyLoan.d.ts",
+      "default": "./dist/finance/IntercompanyLoan.js"
+    },
+    "./finance/IntercompanyMirror": {
+      "types": "./dist/finance/IntercompanyMirror.d.ts",
+      "default": "./dist/finance/IntercompanyMirror.js"
+    },
+    "./finance/Journal": {
+      "types": "./dist/finance/Journal.d.ts",
+      "default": "./dist/finance/Journal.js"
+    },
+    "./finance/LoadedRateSnapshot": {
+      "types": "./dist/finance/LoadedRateSnapshot.d.ts",
+      "default": "./dist/finance/LoadedRateSnapshot.js"
+    },
+    "./finance/Netting": {
+      "types": "./dist/finance/Netting.d.ts",
+      "default": "./dist/finance/Netting.js"
+    },
+    "./finance/PoolAllocation": {
+      "types": "./dist/finance/PoolAllocation.d.ts",
+      "default": "./dist/finance/PoolAllocation.js"
+    },
+    "./finance/RelatedParty": {
+      "types": "./dist/finance/RelatedParty.d.ts",
+      "default": "./dist/finance/RelatedParty.js"
+    },
+    "./finance/Revenue": {
+      "types": "./dist/finance/Revenue.d.ts",
+      "default": "./dist/finance/Revenue.js"
+    },
+    "./finance/TpMethod": {
+      "types": "./dist/finance/TpMethod.d.ts",
+      "default": "./dist/finance/TpMethod.js"
+    },
+    "./finance/TrueUp": {
+      "types": "./dist/finance/TrueUp.d.ts",
+      "default": "./dist/finance/TrueUp.js"
+    },
+    "./finance/XbrlGlRender": {
+      "types": "./dist/finance/XbrlGlRender.d.ts",
+      "default": "./dist/finance/XbrlGlRender.js"
+    },
+    "./fx/Conversion": {
+      "types": "./dist/fx/Conversion.d.ts",
+      "default": "./dist/fx/Conversion.js"
+    },
+    "./fx/Elimination": {
+      "types": "./dist/fx/Elimination.d.ts",
+      "default": "./dist/fx/Elimination.js"
+    },
+    "./fx/FxError": {
+      "types": "./dist/fx/FxError.d.ts",
+      "default": "./dist/fx/FxError.js"
+    },
+    "./fx/FxObservation": {
+      "types": "./dist/fx/FxObservation.d.ts",
+      "default": "./dist/fx/FxObservation.js"
+    },
+    "./fx/FxRateSource": {
+      "types": "./dist/fx/FxRateSource.d.ts",
+      "default": "./dist/fx/FxRateSource.js"
+    },
+    "./fx/FxResolver": {
+      "types": "./dist/fx/FxResolver.d.ts",
+      "default": "./dist/fx/FxResolver.js"
+    },
+    "./fx/FxSeries": {
+      "types": "./dist/fx/FxSeries.d.ts",
+      "default": "./dist/fx/FxSeries.js"
+    },
+    "./fx/FxSnapshot": {
+      "types": "./dist/fx/FxSnapshot.d.ts",
+      "default": "./dist/fx/FxSnapshot.js"
+    },
+    "./fx/RateClause": {
+      "types": "./dist/fx/RateClause.d.ts",
+      "default": "./dist/fx/RateClause.js"
+    },
+    "./fx/Remeasurement": {
+      "types": "./dist/fx/Remeasurement.d.ts",
+      "default": "./dist/fx/Remeasurement.js"
+    },
+    "./fx/Revaluation": {
+      "types": "./dist/fx/Revaluation.d.ts",
+      "default": "./dist/fx/Revaluation.js"
+    },
+    "./fx/SamplePack": {
+      "types": "./dist/fx/SamplePack.d.ts",
+      "default": "./dist/fx/SamplePack.js"
+    },
+    "./fx/Translation": {
+      "types": "./dist/fx/Translation.d.ts",
+      "default": "./dist/fx/Translation.js"
+    },
+    "./tax-incentives/BasePeriodFact": {
+      "types": "./dist/tax-incentives/BasePeriodFact.d.ts",
+      "default": "./dist/tax-incentives/BasePeriodFact.js"
+    },
+    "./tax-incentives/BusinessComponent": {
+      "types": "./dist/tax-incentives/BusinessComponent.d.ts",
+      "default": "./dist/tax-incentives/BusinessComponent.js"
+    },
+    "./tax-incentives/CandidatePool": {
+      "types": "./dist/tax-incentives/CandidatePool.d.ts",
+      "default": "./dist/tax-incentives/CandidatePool.js"
+    },
+    "./tax-incentives/ClaimantAttribution": {
+      "types": "./dist/tax-incentives/ClaimantAttribution.d.ts",
+      "default": "./dist/tax-incentives/ClaimantAttribution.js"
+    },
+    "./tax-incentives/ControlledGroupYear": {
+      "types": "./dist/tax-incentives/ControlledGroupYear.d.ts",
+      "default": "./dist/tax-incentives/ControlledGroupYear.js"
+    },
+    "./tax-incentives/CostBaseAmount": {
+      "types": "./dist/tax-incentives/CostBaseAmount.d.ts",
+      "default": "./dist/tax-incentives/CostBaseAmount.js"
+    },
+    "./tax-incentives/EntityTaxProfile": {
+      "types": "./dist/tax-incentives/EntityTaxProfile.d.ts",
+      "default": "./dist/tax-incentives/EntityTaxProfile.js"
+    },
+    "./tax-incentives/FundingAssessment": {
+      "types": "./dist/tax-incentives/FundingAssessment.d.ts",
+      "default": "./dist/tax-incentives/FundingAssessment.js"
+    },
+    "./tax-incentives/HumanActorSchema": {
+      "types": "./dist/tax-incentives/HumanActorSchema.d.ts",
+      "default": "./dist/tax-incentives/HumanActorSchema.js"
+    },
+    "./tax-incentives/IncentiveRegime": {
+      "types": "./dist/tax-incentives/IncentiveRegime.d.ts",
+      "default": "./dist/tax-incentives/IncentiveRegime.js"
+    },
+    "./tax-incentives/IncentiveSet": {
+      "types": "./dist/tax-incentives/IncentiveSet.d.ts",
+      "default": "./dist/tax-incentives/IncentiveSet.js"
+    },
+    "./tax-incentives/IssueCode": {
+      "types": "./dist/tax-incentives/IssueCode.d.ts",
+      "default": "./dist/tax-incentives/IssueCode.js"
+    },
+    "./tax-incentives/LabourFact": {
+      "types": "./dist/tax-incentives/LabourFact.d.ts",
+      "default": "./dist/tax-incentives/LabourFact.js"
+    },
+    "./tax-incentives/Projections": {
+      "types": "./dist/tax-incentives/Projections.d.ts",
+      "default": "./dist/tax-incentives/Projections.js"
+    },
+    "./tax-incentives/RegimeCostBase": {
+      "types": "./dist/tax-incentives/RegimeCostBase.d.ts",
+      "default": "./dist/tax-incentives/RegimeCostBase.js"
+    },
+    "./tax-incentives/RegimePack": {
+      "types": "./dist/tax-incentives/RegimePack.d.ts",
+      "default": "./dist/tax-incentives/RegimePack.js"
+    },
+    "./tax-incentives/Screen": {
+      "types": "./dist/tax-incentives/Screen.d.ts",
+      "default": "./dist/tax-incentives/Screen.js"
+    },
+    "./tax-incentives/TaxActivitySlice": {
+      "types": "./dist/tax-incentives/TaxActivitySlice.d.ts",
+      "default": "./dist/tax-incentives/TaxActivitySlice.js"
+    },
+    "./tax-incentives/TaxYear": {
+      "types": "./dist/tax-incentives/TaxYear.d.ts",
+      "default": "./dist/tax-incentives/TaxYear.js"
+    },
+    "./tax-incentives/TransferFact": {
+      "types": "./dist/tax-incentives/TransferFact.d.ts",
+      "default": "./dist/tax-incentives/TransferFact.js"
+    },
+    "./tax-incentives/WageFact": {
+      "types": "./dist/tax-incentives/WageFact.d.ts",
+      "default": "./dist/tax-incentives/WageFact.js"
+    },
+    "./work/Acceptance": {
+      "types": "./dist/work/Acceptance.d.ts",
+      "default": "./dist/work/Acceptance.js"
+    },
+    "./work/ApprovalChain": {
+      "types": "./dist/work/ApprovalChain.d.ts",
+      "default": "./dist/work/ApprovalChain.js"
+    },
+    "./work/CapacityCommitment": {
+      "types": "./dist/work/CapacityCommitment.d.ts",
+      "default": "./dist/work/CapacityCommitment.js"
+    },
+    "./work/CapacityForecast": {
+      "types": "./dist/work/CapacityForecast.d.ts",
+      "default": "./dist/work/CapacityForecast.js"
+    },
+    "./work/CapacityHold": {
+      "types": "./dist/work/CapacityHold.d.ts",
+      "default": "./dist/work/CapacityHold.js"
+    },
+    "./work/CapacityOffer": {
+      "types": "./dist/work/CapacityOffer.d.ts",
+      "default": "./dist/work/CapacityOffer.js"
+    },
+    "./work/CapacityRequest": {
+      "types": "./dist/work/CapacityRequest.d.ts",
+      "default": "./dist/work/CapacityRequest.js"
+    },
+    "./work/Code": {
+      "types": "./dist/work/Code.d.ts",
+      "default": "./dist/work/Code.js"
+    },
+    "./work/Disclosure": {
+      "types": "./dist/work/Disclosure.d.ts",
+      "default": "./dist/work/Disclosure.js"
+    },
+    "./work/EconomicEvent": {
+      "types": "./dist/work/EconomicEvent.d.ts",
+      "default": "./dist/work/EconomicEvent.js"
+    },
+    "./work/Employment": {
+      "types": "./dist/work/Employment.d.ts",
+      "default": "./dist/work/Employment.js"
+    },
+    "./work/FirmSchedule": {
+      "types": "./dist/work/FirmSchedule.d.ts",
+      "default": "./dist/work/FirmSchedule.js"
+    },
+    "./work/JournalEntry": {
+      "types": "./dist/work/JournalEntry.d.ts",
+      "default": "./dist/work/JournalEntry.js"
+    },
+    "./work/MonthlyClose": {
+      "types": "./dist/work/MonthlyClose.d.ts",
+      "default": "./dist/work/MonthlyClose.js"
+    },
+    "./work/NotOwner": {
+      "types": "./dist/work/NotOwner.d.ts",
+      "default": "./dist/work/NotOwner.js"
+    },
+    "./work/PartyRef": {
+      "types": "./dist/work/PartyRef.d.ts",
+      "default": "./dist/work/PartyRef.js"
+    },
+    "./work/PersonRef": {
+      "types": "./dist/work/PersonRef.d.ts",
+      "default": "./dist/work/PersonRef.js"
+    },
+    "./work/PresenceDays": {
+      "types": "./dist/work/PresenceDays.d.ts",
+      "default": "./dist/work/PresenceDays.js"
+    },
+    "./work/ProjectLink": {
+      "types": "./dist/work/ProjectLink.d.ts",
+      "default": "./dist/work/ProjectLink.js"
+    },
+    "./work/StandingAuthority": {
+      "types": "./dist/work/StandingAuthority.d.ts",
+      "default": "./dist/work/StandingAuthority.js"
+    },
+    "./work/TimeProposal": {
+      "types": "./dist/work/TimeProposal.d.ts",
+      "default": "./dist/work/TimeProposal.js"
+    },
+    "./work/TimeZone": {
+      "types": "./dist/work/TimeZone.d.ts",
+      "default": "./dist/work/TimeZone.js"
+    },
+    "./work/ValidatePlanning": {
+      "types": "./dist/work/ValidatePlanning.d.ts",
+      "default": "./dist/work/ValidatePlanning.js"
+    },
+    "./work/ValidateWork": {
+      "types": "./dist/work/ValidateWork.d.ts",
+      "default": "./dist/work/ValidateWork.js"
+    },
+    "./work/WorkIds": {
+      "types": "./dist/work/WorkIds.d.ts",
+      "default": "./dist/work/WorkIds.js"
+    },
+    "./work/WorkObject": {
+      "types": "./dist/work/WorkObject.d.ts",
+      "default": "./dist/work/WorkObject.js"
+    },
+    "./work/WorkOrder": {
+      "types": "./dist/work/WorkOrder.d.ts",
+      "default": "./dist/work/WorkOrder.js"
+    },
+    "./work/WorkSource": {
+      "types": "./dist/work/WorkSource.d.ts",
+      "default": "./dist/work/WorkSource.js"
+    }
+  },
+  "peerDependencies": {
+    "effect": "^4.0.2"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "effect": "4.0.2",
+    "typescript": "npm:@typescript/typescript6@6.0.2"
+  }
+}

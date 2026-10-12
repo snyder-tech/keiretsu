@@ -1,0 +1,3 @@
+/** Canonical party contract, owned by core. @since 0.1.0 @module */
+export { PartyRef, partyKey, sameParty } from "../core/PartyRef.js";
+//# sourceMappingURL=Party.js.map

@@ -1,0 +1,1 @@
+{"version":3,"file":"FxPort.d.ts","sourceRoot":"","sources":["../../src/commerce/FxPort.ts"],"names":[],"mappings":"AAAA;;;;;;;;;GASG;AACH,OAAO,EAAE,MAAM,EAAE,MAAM,QAAQ,CAAC;AAMhC;;;;;;;GAOG;AACH,eAAO,MAAM,aAAa;;;;;EAKxB,CAAC;AACH,oCAAoC;AACpC,MAAM,MAAM,aAAa,GAAG,OAAO,aAAa,CAAC,IAAI,CAAC;AAEtD,0FAA0F;AAC1F,OAAO,EAAE,UAAU,IAAI,aAAa,EAAE,MAAM,qBAAqB,CAAC"}

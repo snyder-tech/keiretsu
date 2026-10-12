@@ -1,0 +1,61 @@
+# Standalone public repository only. Hosted-runner exception approved by Ben on 2026-10-12.
+name: Publish npm preview
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact package.json version to publish on next
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: false
+          clean: false
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - run: npm test
+      - run: npm pack --dry-run
+  publish:
+    needs: verify
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'snyder-tech/keiretsu' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: false
+          clean: false
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+      - name: Bind exact release version
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node --input-type=module -e 'import fs from "node:fs"; const p=JSON.parse(fs.readFileSync("package.json")); if(p.name!=="@snyder-tech/keiretsu" || p.version!==process.env.RELEASE_VERSION) throw Error("release identity mismatch");'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - run: npm test
+      - run: npm pack --dry-run
+      - name: Publish next with npm trusted publishing
+        run: npm publish --access public --tag next --provenance

@@ -131,6 +131,8 @@ export type RecordOf<P extends Profile> = {
  */
 export interface BundleCodec<P extends Profile> {
   readonly profile: P;
+  /** Exact schema identities for opt-in strict descriptor profiles. */
+  readonly schemaIds?: Readonly<Record<string, string>>;
   readonly kinds: ReadonlySet<string>;
   readonly Envelope: typeof Envelope;
   readonly Header: typeof Header;
@@ -204,9 +206,11 @@ const encodeEntry = <P extends Profile>(codec: BundleCodec<P>, entry: RecordOf<P
   if (!Object.hasOwn(codec.profile, entry.kind)) return Effect.fail(sealFail(`records[${index}]: kind ${entry.kind} is not in the profile`));
   const schema = codec.profile[entry.kind];
   if (schema === undefined) return Effect.fail(sealFail(`records[${index}]: kind ${entry.kind} has no schema`));
+  const schemaId = codec.schemaIds?.[entry.kind];
+  if (schemaId !== undefined && entry.schema !== undefined && entry.schema !== schemaId) return Effect.fail(sealFail(`records[${index}]: schema identity does not match ${schemaId}`));
   return Schema.encodeUnknownEffect(schema)(entry.record).pipe(
     Effect.mapError((error) => sealFail(`records[${index}]: ${error.message}`)),
-    Effect.flatMap((record) => toJson({ kind: entry.kind, schema: entry.schema, record }, `records[${index}]`)),
+    Effect.flatMap((record) => toJson({ kind: entry.kind, schema: schemaId ?? entry.schema, record }, `records[${index}]`)),
   );
 };
 
@@ -260,7 +264,8 @@ export const bindingOf = (envelope: Pick<Envelope, 'issuer' | 'audience' | 'bund
 
 /**
  * Add a detached JWS over `contentDigest` to sealed text. The digest does not
- * change: `signature` is excluded from it.
+ * change: `signature` is excluded from it. The digest is recomputed from the
+ * text first, so stale or edited text is refused rather than signed.
  *
  * @since 0.1.0
  * @category producing
@@ -270,6 +275,8 @@ export const signBundle = (options: { readonly text: string; readonly key: Signi
     const parsed = yield* Effect.mapError(parseStrict(options.text), (error) => sealFail(error.reason));
     if (!isJsonObject(parsed)) return yield* Effect.fail(sealFail('a bundle is a JSON object'));
     const envelope = yield* Schema.decodeUnknownEffect(Envelope)(parsed).pipe(Effect.mapError((error) => sealFail(error.message)));
+    const digest = yield* Effect.mapError(digestWire(options.text, DIGEST_EXCLUDED), (error) => sealFail(error.reason));
+    if (digest !== envelope.contentDigest) return yield* Effect.fail(sealFail('contentDigest does not match the text; reseal before signing'));
     const signature = yield* sign({ key: options.key, typ: BUNDLE_TYP, binding: bindingOf(envelope), payload: envelope.contentDigest }).pipe(Effect.mapError((error) => sealFail(error.reason)));
     return yield* Effect.mapError(canonicalize({ ...parsed, signature }), (error) => sealFail(error.reason));
   });
@@ -283,7 +290,7 @@ export const signBundle = (options: { readonly text: string; readonly key: Signi
 export type EntryOutcome<P extends Profile> =
   | { readonly _tag: 'known'; readonly index: number; readonly kind: string; readonly recordDigest: Sha256; readonly raw: unknown; readonly entry: RecordOf<P> }
   | { readonly _tag: 'unknown-kind'; readonly index: number; readonly kind: string; readonly recordDigest: Sha256; readonly raw: unknown }
-  | { readonly _tag: 'invalid'; readonly index: number; readonly kind: string; readonly recordDigest: Sha256; readonly raw: unknown; readonly reason: string };
+  | { readonly _tag: 'invalid'; readonly index: number; readonly kind: string; readonly recordDigest: Sha256; readonly raw: unknown; readonly reason: string; readonly code?: string };
 
 /**
  * A received bundle: the exact text, the strictly parsed JSON, the decoded
@@ -313,6 +320,8 @@ const classify = <P extends Profile>(codec: BundleCodec<P>, entry: RecordEntry, 
     const base = { index, kind: entry.kind, recordDigest, raw: entry.record };
     const schema = Object.hasOwn(codec.profile, entry.kind) ? codec.profile[entry.kind] : undefined;
     if (schema === undefined) return { _tag: 'unknown-kind', ...base } as const;
+    const schemaId = codec.schemaIds?.[entry.kind];
+    if (schemaId !== undefined && entry.schema !== schemaId) return { _tag: 'invalid', ...base, code: 'record.schema-mismatch', reason: `schema identity does not match ${schemaId}` } as const;
     return yield* Schema.decodeUnknownEffect(schema)(entry.record).pipe(
       Effect.match({
         onFailure: (error): EntryOutcome<P> => ({ _tag: 'invalid', ...base, reason: error.message }),

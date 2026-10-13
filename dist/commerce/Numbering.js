@@ -11,7 +11,7 @@
  * @since 0.1.0
  * @module
  */
-import { Context, Effect, Layer, Ref, Schema } from 'effect';
+import { Context, Effect, Layer, Schema, SynchronizedRef } from 'effect';
 import { OpenCode } from "./Code.js";
 import { fault } from "./Invariant.js";
 /**
@@ -124,9 +124,12 @@ export const validateNumbering = (documents) => {
  * @category services
  */
 export class InvoiceNumberAllocator extends Context.Service()('@snyder-tech/keiretsu/commerce/InvoiceNumberAllocator') {
-    /** An in-memory allocator for tests and dry runs. */
-    static inMemory = Layer.effect(InvoiceNumberAllocator)(Effect.map(Ref.make(emptyLedger), (ref) => ({
-        allocate: (request) => Effect.flatMap(Ref.get(ref), (ledger) => Effect.flatMap(allocateNumber(ledger, request), (result) => Effect.as(Ref.set(ref, result.ledger), result.number))),
+    /**
+     * An in-memory allocator for tests and dry runs. Read, allocate and write run under the ref's
+     * lock, so concurrent fibers never receive the same number.
+     */
+    static inMemory = Layer.effect(InvoiceNumberAllocator)(Effect.map(SynchronizedRef.make(emptyLedger), (ref) => ({
+        allocate: (request) => SynchronizedRef.modifyEffect(ref, (ledger) => Effect.map(allocateNumber(ledger, request), (result) => [result.number, result.ledger])),
     })));
 }
 //# sourceMappingURL=Numbering.js.map

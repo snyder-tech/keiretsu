@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "hashAlgorithm": "sha256",
+  "semanticSpecification": "canonical-profiles.md",
+  "schemas": [
+    {
+      "schemaId": "urn:keiretsu:schema:core:exact-ratio:1",
+      "path": "schemas/core-exact-ratio-1.json",
+      "sha256": "5cc44cb5de97ce8d197d49108c91c12d924d746e20cc445987be32655679882d",
+      "semanticRules": [
+        "ratio.canonical-integers",
+        "ratio.components-at-most-256-digits",
+        "ratio.reduced-positive-denominator"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:core:computational-derivation:1",
+      "path": "schemas/core-computational-derivation-1.json",
+      "sha256": "7ce3c886f02598291fda2ed27827b839b86ea0bf23226f5fd145a9e9e512eee3",
+      "semanticRules": [
+        "derivation.artifacts-available",
+        "derivation.rule-authority"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:core:instant:1",
+      "path": "schemas/core-instant-1.json",
+      "sha256": "76ac48dabc544a661834535ff6ae753e3686b46b8fabd05c96350e13376aaa6b",
+      "semanticRules": [
+        "instant.gregorian-utc",
+        "instant.nanosecond-ordering"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:core:date:1",
+      "path": "schemas/core-date-1.json",
+      "sha256": "0b8289792c3db826ed7f4dd6d0e97fbfdabe9a8822050b0d306cc60899f2b14f",
+      "semanticRules": [
+        "date.gregorian"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:mapping:canonical-ref:1",
+      "path": "schemas/mapping-canonical-ref-1.json",
+      "sha256": "efd3cc1c04d48de3c2f4e067f5cb75aecc79665aab11f1bfc2582016d9219a22",
+      "semanticRules": [
+        "mapping.existing-identity"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:mapping:source-ref:1",
+      "path": "schemas/mapping-source-ref-1.json",
+      "sha256": "901a5f256d7119aa9f705afe86cae2c22f2eb31dc982c526565b57f0fdf3ee7f",
+      "semanticRules": [
+        "mapping.installation-lifecycle"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:mapping:source-binding:1",
+      "path": "schemas/mapping-source-binding-1.json",
+      "sha256": "bd6a5542f16b53752e40753abb65f52ae140ef4ea92d77bc9c0b580248cefb1c",
+      "semanticRules": [
+        "mapping.binding-evidence",
+        "mapping.binding-uniqueness"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:mapping:definition:1",
+      "path": "schemas/mapping-definition-1.json",
+      "sha256": "1ac2437b8eacab5240a2790c31d399dc6e7aca1d7fb70668471525c5494252af",
+      "semanticRules": [
+        "mapping.direction-explicit",
+        "mapping.target-field-unique"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:mapping:computation:1",
+      "path": "schemas/mapping-computation-1.json",
+      "sha256": "e117308ffcff4a7c70b496092aad63a913d24fba77e248e0ec2d844786a74585",
+      "semanticRules": [
+        "mapping.coherent-recomputation",
+        "mapping.current-authority-and-pins"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:admission:entitlement:1",
+      "path": "schemas/admission-entitlement-1.json",
+      "sha256": "19d35a970ac26343ed89ab919897c146401c61b1057ecee64264b2c16e361193",
+      "semanticRules": [
+        "instant.gregorian-utc",
+        "admission.nonempty-validity",
+        "admission.entitlement-not-credential"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:admission:command:1",
+      "path": "schemas/admission-command-1.json",
+      "sha256": "18bbaa5df8e4854728caad1a29189be0eafa621e01fe0ded6c82831a197f58d8",
+      "semanticRules": [
+        "admission.authorized-atomic-cas",
+        "admission.current-credential-and-scope",
+        "admission.idempotency-content-bound"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:admission:receipt:1",
+      "path": "schemas/admission-receipt-1.json",
+      "sha256": "8fcbdecd9ba712de089b7d28576f61819d20698ca568119b4cb19aa4f9b79cac",
+      "semanticRules": [
+        "admission.scan-result-binding",
+        "admission.receipt-is-not-payment"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:work:item:1",
+      "path": "schemas/work-item-1.json",
+      "sha256": "002fa26b17f3470fd3d44ce2b9a327c525c9d1805fbaec59ee619f2e69e36d94",
+      "semanticRules": [
+        "work.unique-complete-hierarchy",
+        "work.revision-chain",
+        "work.valid-interval"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:work:request:1",
+      "path": "schemas/work-request-1.json",
+      "sha256": "e4645b50162082e8463d8571d78182eb5864e8b775e0ed9dec2f297b5af70164",
+      "semanticRules": [
+        "work.revision-chain",
+        "work.request-is-not-acceptance"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:work:observation:1",
+      "path": "schemas/work-observation-1.json",
+      "sha256": "bac0bfd4c0e54aff4c7055d274863bd730942e42c61c2f65e9d9ab1eaae11696",
+      "semanticRules": [
+        "work.source-and-event-binding",
+        "work.complete-source-cohort",
+        "work.identity-and-employment",
+        "work.exact-source-conversion"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:service:case:1",
+      "path": "schemas/service-case-1.json",
+      "sha256": "fc14907ee5ef32193b74e4c4513cf07f1c622d8e0e33e2ca5a81c0b8242756df",
+      "semanticRules": [
+        "service.source-status-not-acceptance",
+        "service.calendar-policy-version",
+        "service.scoped-authority"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:exchange:envelope:0.3",
+      "path": "schemas/exchange-envelope-0.3.json",
+      "sha256": "03f41c93e045e0f639877f1ab1a0787a9a69a3c9f1f92857b47e063f5230cbc3",
+      "semanticRules": [
+        "exchange.content-digest",
+        "exchange.chain-and-audience",
+        "exchange.consistent-cohort-modes",
+        "exchange.mandatory-host-authorization"
+      ]
+    },
+    {
+      "schemaId": "urn:keiretsu:schema:exchange:receipt:0.3",
+      "path": "schemas/exchange-receipt-0.3.json",
+      "sha256": "928b0092d69d5939f0a6bacc34e5abd137197d120bcfa331b8bf1c76b64c35db",
+      "semanticRules": [
+        "exchange.complete-record-identity",
+        "exchange.phase-and-aggregate",
+        "exchange.receipt-digest",
+        "exchange.receipt-signature-and-audience"
+      ]
+    }
+  ]
+}

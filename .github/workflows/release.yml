@@ -30,6 +30,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run build
       - run: npm test
+      - run: npm run check:consumer
       - run: npm pack --dry-run
   publish:
     needs: verify
@@ -56,6 +57,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run build
       - run: npm test
+      - run: npm run check:consumer
       - run: npm pack --dry-run
       - name: Publish next with npm trusted publishing
         run: npm publish --access public --tag next --provenance

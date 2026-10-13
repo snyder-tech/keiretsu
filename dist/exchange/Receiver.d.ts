@@ -1,29 +1,9 @@
-/**
- * The receiver pipeline: open → verify → admit → classify → receipt → commit.
- *
- * 1. {@link open} the exact received text (strict parse, version negotiation,
- *    wire digest, envelope decode, record classification).
- * 2. {@link verifyBundle}: digest, signature policy. Bundle-level errors yield a
- *    `rejected` receipt and the chain does not advance (a forged bundle cannot
- *    fork or halt a pair).
- * 3. {@link SequenceStore} `admit`: duplicate, replay conflict, gap (hold) or fork (halt).
- * 4. Per record: unknown kind, invalid record and disclosure violations are
- *    `rejected` with coded reasons; other records are `accepted`, or
- *    `accepted-in-period` when the receiver books them in its own open period.
- * 5. Seal (and optionally sign) the receipt and `commit` it.
- *
- * The receiver applies records under its own authority; the receipt is the
- * only thing that crosses back.
- *
- * @since 0.1.0
- * @module
- */
 import { type Period } from '../core/Temporal.ts';
 import { Effect, Option } from 'effect';
 import { type BundleCodec, type BundleDecodeError, type Profile, type UnsupportedMajor } from './Bundle.ts';
 import { type RecordKindPolicy } from './Disclosure.ts';
 import type { SigningKey } from './Jws.ts';
-import type { PartyRef } from './Party.ts';
+import { type PartyRef } from './Party.ts';
 import { type BundleReceipt, type ReceiptError } from './Receipt.ts';
 import { type ChainFork, type ReplayConflict, SequenceStore } from './Sequence.ts';
 import { type BundlePolicy } from './Verify.ts';
@@ -44,8 +24,8 @@ export interface ReceiveOptions<P extends Profile> {
     readonly supported?: ReadonlyArray<string>;
     /** The receiver's open period; records for another period are `accepted-in-period`. */
     readonly receiverPeriod?: Period;
-    /** Receiver's own party reference (defaults to the bundle audience). */
-    readonly self?: PartyRef;
+    /** Receiver's own party reference, supplied by the host installation. */
+    readonly self: PartyRef;
     /** Sign the receipt with this key. */
     readonly signingKey?: SigningKey;
 }

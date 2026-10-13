@@ -70,16 +70,21 @@ export type FallbackReason = typeof FallbackReason.Type;
 const legFrom = (leg: RateLeg): string => (leg.orientation === 'multiply' ? leg.base : leg.quote);
 const legTo = (leg: RateLeg): string => (leg.orientation === 'multiply' ? leg.quote : leg.base);
 
-const chainConnects = (snapshot: { readonly base: string; readonly quote: string; readonly pivot?: string | undefined; readonly legs: ReadonlyArray<RateLeg> }): string | undefined => {
-  const [first, second] = snapshot.legs;
-  if (first === undefined) return 'a snapshot needs at least one leg';
-  if (snapshot.pivot === undefined) {
-    return snapshot.legs.length === 1 && legFrom(first) === snapshot.base && legTo(first) === snapshot.quote ? undefined : 'a direct snapshot has one leg from base to quote';
-  }
-  if (second === undefined || snapshot.legs.length !== 2) return 'a triangulated snapshot has exactly two legs';
+type SnapshotChain = { readonly base: string; readonly quote: string; readonly pivot?: string | undefined; readonly legs: ReadonlyArray<RateLeg> };
+const directChainIssue = (snapshot: SnapshotChain, first: RateLeg): string | undefined => {
+  return snapshot.legs.length === 1 && legFrom(first) === snapshot.base && legTo(first) === snapshot.quote ? undefined : 'a direct snapshot has one leg from base to quote';
+};
+const triangulatedChainIssue = (snapshot: SnapshotChain, first: RateLeg, second: RateLeg): string | undefined => {
   return legFrom(first) === snapshot.base && legTo(first) === snapshot.pivot && legFrom(second) === snapshot.pivot && legTo(second) === snapshot.quote
     ? undefined
     : 'triangulated legs must run base → pivot → quote';
+};
+const chainConnects = (snapshot: SnapshotChain): string | undefined => {
+  const [first, second] = snapshot.legs;
+  if (first === undefined) return 'a snapshot needs at least one leg';
+  if (snapshot.pivot === undefined) return directChainIssue(snapshot, first);
+  if (second === undefined || snapshot.legs.length !== 2) return 'a triangulated snapshot has exactly two legs';
+  return triangulatedChainIssue(snapshot, first, second);
 };
 
 const SnapshotFields = {

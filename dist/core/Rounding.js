@@ -19,7 +19,9 @@ import { Schema } from 'effect';
  * @category schemas
  */
 export const RoundingMode = Schema.Literals(['half-away-from-zero', 'half-even', 'half-toward-positive', 'toward-zero', 'away-from-zero', 'floor', 'ceiling']);
-const roundsAway = (mode, negative, quotient, twiceRemainder, divisor) => {
+const halfTowardPositive = (twiceRemainder, divisor, negative) => twiceRemainder > divisor || (twiceRemainder === divisor && !negative);
+const halfEven = (twiceRemainder, divisor, quotient) => twiceRemainder > divisor || (twiceRemainder === divisor && quotient % 2n === 1n);
+const roundsAway = ({ mode, negative, quotient, twiceRemainder, divisor }) => {
     if (twiceRemainder === 0n)
         return false;
     switch (mode) {
@@ -34,9 +36,9 @@ const roundsAway = (mode, negative, quotient, twiceRemainder, divisor) => {
         case 'half-away-from-zero':
             return twiceRemainder >= divisor;
         case 'half-toward-positive':
-            return twiceRemainder > divisor || (twiceRemainder === divisor && !negative);
+            return halfTowardPositive(twiceRemainder, divisor, negative);
         case 'half-even':
-            return twiceRemainder > divisor || (twiceRemainder === divisor && quotient % 2n === 1n);
+            return halfEven(twiceRemainder, divisor, quotient);
     }
 };
 /**
@@ -57,7 +59,7 @@ export const divide = (dividend, divisor, mode) => {
     const negative = dividend < 0n;
     const magnitude = negative ? -dividend : dividend;
     const quotient = magnitude / divisor;
-    const away = roundsAway(mode, negative, quotient, (magnitude % divisor) * 2n, divisor);
+    const away = roundsAway({ mode, negative, quotient, twiceRemainder: (magnitude % divisor) * 2n, divisor });
     const rounded = away ? quotient + 1n : quotient;
     return negative ? -rounded : rounded;
 };

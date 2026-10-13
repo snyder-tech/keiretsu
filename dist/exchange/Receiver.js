@@ -3,25 +3,29 @@
  *
  * 1. {@link open} the exact received text (strict parse, version negotiation,
  *    wire digest, envelope decode, record classification).
- * 2. {@link verifyBundle}: digest, signature policy. Bundle-level errors yield a
- *    `rejected` receipt and the chain does not advance (a forged bundle cannot
- *    fork or halt a pair).
+ * 2. {@link verifyBundle}: digest, signature policy, and (when `self` is given)
+ *    that the bundle is addressed to this receiver. Bundle-level errors yield a
+ *    `rejected` receipt and the chain does not advance. An unsigned bundle inside
+ *    the control group is trusted to its digest only, so a party with transport
+ *    access there can still present a conflicting bundle at a used seq.
  * 3. {@link SequenceStore} `admit`: duplicate, replay conflict, gap (hold) or fork (halt).
  * 4. Per record: unknown kind, invalid record and disclosure violations are
  *    `rejected` with coded reasons; other records are `accepted`, or
  *    `accepted-in-period` when the receiver books them in its own open period.
  * 5. Seal (and optionally sign) the receipt and `commit` it.
  *
- * The receiver applies records under its own authority; the receipt is the
- * only thing that crosses back.
+ * This pipeline validates records and tracks receipts. Hosts own business
+ * application, durable idempotency and acknowledgment under their authority.
  *
  * @since 0.1.0
  * @module
  */
+import { issue } from "../core/Issue.js";
 import { Instant } from "../core/Temporal.js";
 import { Clock, Effect, Option, Schema } from 'effect';
 import { open } from "./Bundle.js";
 import { checkDisclosure } from "./Disclosure.js";
+import { partyKey } from "./Party.js";
 import { outcomeOf, readReceipt, sealReceipt, signReceipt } from "./Receipt.js";
 import { SequenceStore } from "./Sequence.js";
 import { verifyBundle } from "./Verify.js";
@@ -29,7 +33,7 @@ const reasonFor = (entry, disclosure) => {
     if (entry._tag === 'unknown-kind')
         return [{ code: 'record.unknown-kind', message: `kind ${entry.kind} is not in the receiver's profile` }];
     if (entry._tag === 'invalid')
-        return [{ code: 'record.invalid', message: entry.reason }];
+        return [{ code: entry.code ?? 'record.invalid', message: entry.reason }];
     return disclosure.filter((found) => found.index === entry.index).map((found) => ({ code: found.issue.code, message: found.issue.message }));
 };
 const recordIdOf = (raw) => {
@@ -62,6 +66,24 @@ const finish = (options, receipt) => Effect.gen(function* () {
     const text = yield* signReceipt({ text: sealed.text, key: options.signingKey });
     return { text, receipt: yield* readReceipt(text) };
 });
+const duplicateAcknowledgment = Effect.fnUntraced(function* (options, input) {
+    const original = Option.isSome(input.original) ? yield* readReceipt(input.original.value) : undefined;
+    const sealed = yield* finish(options, {
+        ...input.header,
+        outcome: 'duplicate',
+        records: [],
+        issues: input.issues,
+        ...(original === undefined ? {} : { originalReceiptDigest: original.receiptDigest }),
+    });
+    return { _tag: 'duplicate', ...sealed, original: input.original };
+});
+/** A bundle addressed to another party is refused before it can touch this receiver's chain. */
+const audienceIssues = (audience, bundleId, self) => partyKey(self) === partyKey(audience) ? [] : [issue('bundle.audience-mismatch', 'error', bundleId, 'the bundle audience does not match this receiver')];
+/** Combine verification and addressing into one decision on whether the bundle may touch the chain. */
+const bundleRejection = (verification, envelope, self) => {
+    const mismatch = audienceIssues(envelope.audience, envelope.bundleId, self);
+    return { rejected: verification.errorCount > 0 || mismatch.length > 0, issues: [...verification.issues, ...mismatch] };
+};
 const positionOf = (opened) => ({
     issuer: opened.envelope.issuer,
     audience: opened.envelope.audience,
@@ -83,15 +105,16 @@ export const receive = (options) => Effect.gen(function* () {
         specVersion: envelope.specVersion,
         bundleId: envelope.bundleId,
         issuer: envelope.issuer,
-        receiver: options.self ?? envelope.audience,
+        receiver: options.self,
         seq: envelope.seq,
         contentDigest: opened.digest,
         receivedAt: yield* now,
         ...(options.receiverPeriod === undefined ? {} : { receiverPeriod: options.receiverPeriod }),
     };
     const verification = yield* verifyBundle(opened, options.policy);
-    if (verification.errorCount > 0) {
-        const sealed = yield* finish(options, { ...header, outcome: 'rejected', records: [], issues: verification.issues });
+    const rejection = bundleRejection(verification, envelope, options.self);
+    if (rejection.rejected) {
+        const sealed = yield* finish(options, { ...header, outcome: 'rejected', records: [], issues: rejection.issues });
         return { _tag: 'receipted', ...sealed, committed: false };
     }
     const store = yield* SequenceStore;
@@ -101,17 +124,8 @@ export const receive = (options) => Effect.gen(function* () {
         return { _tag: 'held', expectedSeq: admission.expectedSeq, reason: admission.reason };
     if (admission._tag === 'halted')
         return { _tag: 'halted', reason: admission.reason };
-    if (admission._tag === 'duplicate') {
-        const original = Option.isSome(admission.receipt) ? yield* readReceipt(admission.receipt.value) : undefined;
-        const sealed = yield* finish(options, {
-            ...header,
-            outcome: 'duplicate',
-            records: [],
-            issues: verification.issues,
-            ...(original === undefined ? {} : { originalReceiptDigest: original.receiptDigest }),
-        });
-        return { _tag: 'duplicate', ...sealed, original: admission.receipt };
-    }
+    if (admission._tag === 'duplicate')
+        return yield* duplicateAcknowledgment(options, { header, original: admission.receipt, issues: verification.issues });
     const records = recordReceipts(opened, options);
     const sealed = yield* finish(options, { ...header, outcome: outcomeOf(records), records, issues: verification.issues });
     yield* store.commit({ position, receipt: sealed.text });

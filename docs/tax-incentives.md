@@ -60,7 +60,7 @@ stale or unverified citations warn. Codes and severities are listed in `IssueCod
 - Fiscal-calendar quarters (quarters are calendar quarters in 0.1); strict mode turning `needs-verification` into holds.
 - JSON Schema annotations and conformance vectors for each issue code.
 
-Effect and `@snyder-tech/keiretsu/core` are peer dependencies. ESM only. Apache-2.0.
+Effect is a peer dependency; `@snyder-tech/keiretsu/core` is a subpath of the same package. ESM only. Apache-2.0.
 
 `Projections` exports `labourFact`, `transferFacts`, `employmentFacts` and `entityTaxProfile` from the source records. An entity tax profile requires explicit pass-through classification and registration evidence; the package does not infer either.
 

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:mapping:source-ref:1",
+  "type": "object",
+  "properties": {
+    "installationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recordKey": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "installationId",
+    "model",
+    "recordKey"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "mapping.installation-lifecycle"
+  ]
+}

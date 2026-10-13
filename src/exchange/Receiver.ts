@@ -3,28 +3,31 @@
  *
  * 1. {@link open} the exact received text (strict parse, version negotiation,
  *    wire digest, envelope decode, record classification).
- * 2. {@link verifyBundle}: digest, signature policy. Bundle-level errors yield a
- *    `rejected` receipt and the chain does not advance (a forged bundle cannot
- *    fork or halt a pair).
+ * 2. {@link verifyBundle}: digest, signature policy, and (when `self` is given)
+ *    that the bundle is addressed to this receiver. Bundle-level errors yield a
+ *    `rejected` receipt and the chain does not advance. An unsigned bundle inside
+ *    the control group is trusted to its digest only, so a party with transport
+ *    access there can still present a conflicting bundle at a used seq.
  * 3. {@link SequenceStore} `admit`: duplicate, replay conflict, gap (hold) or fork (halt).
  * 4. Per record: unknown kind, invalid record and disclosure violations are
  *    `rejected` with coded reasons; other records are `accepted`, or
  *    `accepted-in-period` when the receiver books them in its own open period.
  * 5. Seal (and optionally sign) the receipt and `commit` it.
  *
- * The receiver applies records under its own authority; the receipt is the
- * only thing that crosses back.
+ * This pipeline validates records and tracks receipts. Hosts own business
+ * application, durable idempotency and acknowledgment under their authority.
  *
  * @since 0.1.0
  * @module
  */
+import { issue, type ValidationIssue, type ValidationReport } from '../core/Issue.ts';
 import { Instant, type Period } from '../core/Temporal.ts';
 import { Clock, Effect, Option, Schema } from 'effect';
 
 import { type BundleCodec, type BundleDecodeError, type EntryOutcome, open, type Opened, type Profile, type UnsupportedMajor } from './Bundle.ts';
 import { checkDisclosure, type RecordIssue, type RecordKindPolicy } from './Disclosure.ts';
 import type { SigningKey } from './Jws.ts';
-import type { PartyRef } from './Party.ts';
+import { type PartyRef, partyKey } from './Party.ts';
 import { type BundleReceipt, outcomeOf, type Reason, type ReceiptError, type RecordReceipt, readReceipt, sealReceipt, signReceipt, type UnsealedReceipt } from './Receipt.ts';
 import { type ChainFork, type ChainPosition, type ReplayConflict, SequenceStore } from './Sequence.ts';
 import { type BundlePolicy, verifyBundle } from './Verify.ts';
@@ -44,8 +47,8 @@ export interface ReceiveOptions<P extends Profile> {
   readonly supported?: ReadonlyArray<string>;
   /** The receiver's open period; records for another period are `accepted-in-period`. */
   readonly receiverPeriod?: Period;
-  /** Receiver's own party reference (defaults to the bundle audience). */
-  readonly self?: PartyRef;
+  /** Receiver's own party reference, supplied by the host installation. */
+  readonly self: PartyRef;
   /** Sign the receipt with this key. */
   readonly signingKey?: SigningKey;
 }
@@ -64,7 +67,7 @@ export type ReceiveResult =
 
 const reasonFor = (entry: EntryOutcome<Profile>, disclosure: ReadonlyArray<RecordIssue>): ReadonlyArray<Reason> => {
   if (entry._tag === 'unknown-kind') return [{ code: 'record.unknown-kind', message: `kind ${entry.kind} is not in the receiver's profile` }];
-  if (entry._tag === 'invalid') return [{ code: 'record.invalid', message: entry.reason }];
+  if (entry._tag === 'invalid') return [{ code: entry.code ?? 'record.invalid', message: entry.reason }];
   return disclosure.filter((found) => found.index === entry.index).map((found) => ({ code: found.issue.code, message: found.issue.message }));
 };
 
@@ -100,6 +103,41 @@ const finish = <P extends Profile>(options: ReceiveOptions<P>, receipt: Unsealed
     return { text, receipt: yield* readReceipt(text) };
   });
 
+const duplicateAcknowledgment = Effect.fnUntraced(function* <P extends Profile>(
+  options: ReceiveOptions<P>,
+  input: {
+    readonly header: Omit<UnsealedReceipt, 'outcome' | 'records' | 'issues' | 'originalReceiptDigest'>;
+    readonly original: Option.Option<string>;
+    readonly issues: UnsealedReceipt['issues'];
+  },
+): Effect.fn.Return<Extract<ReceiveResult, { readonly _tag: 'duplicate' }>, ReceiptError> {
+  const original = Option.isSome(input.original) ? yield* readReceipt(input.original.value) : undefined;
+  const sealed = yield* finish(options, {
+    ...input.header,
+    outcome: 'duplicate',
+    records: [],
+    issues: input.issues,
+    ...(original === undefined ? {} : { originalReceiptDigest: original.receiptDigest }),
+  });
+  return { _tag: 'duplicate', ...sealed, original: input.original };
+});
+
+/** A bundle addressed to another party is refused before it can touch this receiver's chain. */
+const audienceIssues = (audience: PartyRef, bundleId: string, self: PartyRef): ReadonlyArray<ValidationIssue> =>
+  partyKey(self) === partyKey(audience) ? [] : [issue('bundle.audience-mismatch', 'error', bundleId, 'the bundle audience does not match this receiver')];
+
+/** Bundle-level refusal: verification issues first, then the audience mismatch. */
+interface BundleRejection {
+  readonly rejected: boolean;
+  readonly issues: ReadonlyArray<ValidationIssue>;
+}
+
+/** Combine verification and addressing into one decision on whether the bundle may touch the chain. */
+const bundleRejection = (verification: ValidationReport, envelope: Opened<Profile>['envelope'], self: PartyRef): BundleRejection => {
+  const mismatch = audienceIssues(envelope.audience, envelope.bundleId, self);
+  return { rejected: verification.errorCount > 0 || mismatch.length > 0, issues: [...verification.issues, ...mismatch] };
+};
+
 const positionOf = (opened: { readonly envelope: Opened<Profile>['envelope']; readonly digest: string }): ChainPosition => ({
   issuer: opened.envelope.issuer,
   audience: opened.envelope.audience,
@@ -115,9 +153,7 @@ const positionOf = (opened: { readonly envelope: Opened<Profile>['envelope']; re
  * @since 0.1.0
  * @category receiving
  */
-export const receive = <P extends Profile>(
-  options: ReceiveOptions<P>,
-): Effect.Effect<ReceiveResult, BundleDecodeError | UnsupportedMajor | ReplayConflict | ChainFork | ReceiptError, SequenceStore> =>
+export const receive = <P extends Profile>(options: ReceiveOptions<P>): Effect.Effect<ReceiveResult, BundleDecodeError | UnsupportedMajor | ReplayConflict | ChainFork | ReceiptError, SequenceStore> =>
   Effect.gen(function* () {
     const opened = yield* open(options.codec, options.text, options.supported === undefined ? {} : { supported: options.supported });
     const { envelope } = opened;
@@ -125,15 +161,16 @@ export const receive = <P extends Profile>(
       specVersion: envelope.specVersion,
       bundleId: envelope.bundleId,
       issuer: envelope.issuer,
-      receiver: options.self ?? envelope.audience,
+      receiver: options.self,
       seq: envelope.seq,
       contentDigest: opened.digest,
       receivedAt: yield* now,
       ...(options.receiverPeriod === undefined ? {} : { receiverPeriod: options.receiverPeriod }),
     };
     const verification = yield* verifyBundle(opened, options.policy);
-    if (verification.errorCount > 0) {
-      const sealed = yield* finish(options, { ...header, outcome: 'rejected', records: [], issues: verification.issues });
+    const rejection = bundleRejection(verification, envelope, options.self);
+    if (rejection.rejected) {
+      const sealed = yield* finish(options, { ...header, outcome: 'rejected', records: [], issues: rejection.issues });
       return { _tag: 'receipted', ...sealed, committed: false } as const;
     }
     const store = yield* SequenceStore;
@@ -141,17 +178,7 @@ export const receive = <P extends Profile>(
     const admission = yield* store.admit(position);
     if (admission._tag === 'hold') return { _tag: 'held', expectedSeq: admission.expectedSeq, reason: admission.reason } as const;
     if (admission._tag === 'halted') return { _tag: 'halted', reason: admission.reason } as const;
-    if (admission._tag === 'duplicate') {
-      const original = Option.isSome(admission.receipt) ? yield* readReceipt(admission.receipt.value) : undefined;
-      const sealed = yield* finish(options, {
-        ...header,
-        outcome: 'duplicate',
-        records: [],
-        issues: verification.issues,
-        ...(original === undefined ? {} : { originalReceiptDigest: original.receiptDigest }),
-      });
-      return { _tag: 'duplicate', ...sealed, original: admission.receipt } as const;
-    }
+    if (admission._tag === 'duplicate') return yield* duplicateAcknowledgment(options, { header, original: admission.receipt, issues: verification.issues });
     const records = recordReceipts(opened, options);
     const sealed = yield* finish(options, { ...header, outcome: outcomeOf(records), records, issues: verification.issues });
     yield* store.commit({ position, receipt: sealed.text });

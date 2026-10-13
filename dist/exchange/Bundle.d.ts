@@ -121,6 +121,8 @@ export type RecordOf<P extends Profile> = {
  */
 export interface BundleCodec<P extends Profile> {
     readonly profile: P;
+    /** Exact schema identities for opt-in strict descriptor profiles. */
+    readonly schemaIds?: Readonly<Record<string, string>>;
     readonly kinds: ReadonlySet<string>;
     readonly Envelope: typeof Envelope;
     readonly Header: typeof Header;
@@ -211,7 +213,8 @@ export declare const seal: <P extends Profile>(codec: BundleCodec<P>, bundle: Un
 export declare const bindingOf: (envelope: Pick<Envelope, "issuer" | "audience" | "bundleId" | "seq" | "specVersion">) => Binding;
 /**
  * Add a detached JWS over `contentDigest` to sealed text. The digest does not
- * change: `signature` is excluded from it.
+ * change: `signature` is excluded from it. The digest is recomputed from the
+ * text first, so stale or edited text is refused rather than signed.
  *
  * @since 0.1.0
  * @category producing
@@ -246,6 +249,7 @@ export type EntryOutcome<P extends Profile> = {
     readonly recordDigest: Sha256;
     readonly raw: unknown;
     readonly reason: string;
+    readonly code?: string;
 };
 /**
  * A received bundle: the exact text, the strictly parsed JSON, the decoded

@@ -44,8 +44,10 @@ export const brand = (key) => Uuid7.pipe(Schema.brand(key));
  * @category constructors
  */
 export const fromParts = (unixMillis, random) => {
-    if (random.length < 10)
-        throw new RangeError('UUIDv7 needs 10 random bytes');
+    if (!Number.isSafeInteger(unixMillis) || unixMillis < 0 || unixMillis > 0xffffffffffff)
+        throw new RangeError('UUIDv7 timestamp must be an integer from 0 to 2^48 - 1');
+    if (random.length !== 10)
+        throw new RangeError('UUIDv7 needs exactly 10 random bytes');
     const bytes = new Uint8Array(16);
     let time = BigInt(unixMillis);
     for (let index = 5; index >= 0; index -= 1) {

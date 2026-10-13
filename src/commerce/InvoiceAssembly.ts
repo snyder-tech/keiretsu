@@ -110,11 +110,17 @@ const placeCredit = (line: ChargeLine, ledger: CreditLedger): Placement => {
   return { _tag: 'credit', precedingInvoiceId: target.documentId };
 };
 
-const place = (line: ChargeLine, context: { readonly policy: AssemblyPolicy; readonly consumed: ReadonlySet<string>; readonly ledger: CreditLedger }): Placement => {
-  if (context.consumed.has(line.id)) return excluded('assembly.already-consumed', 'the charge is already on a document');
+const billabilityExclusion = (line: ChargeLine, consumed: ReadonlySet<string>): Placement | undefined => {
+  if (consumed.has(line.id)) return excluded('assembly.already-consumed', 'the charge is already on a document');
   if (line.status === 'held') return excluded('assembly.held', `held: ${line.holdReasonCode ?? 'no reason code'}`);
   if (line.status !== 'accrued') return excluded('assembly.not-accrued', `status ${line.status} is not billable`);
   if (line.billingModeTag === 'no-charge') return excluded('assembly.no-charge', 'no-charge lines are recorded, not billed');
+  return undefined;
+};
+
+const place = (line: ChargeLine, context: { readonly policy: AssemblyPolicy; readonly consumed: ReadonlySet<string>; readonly ledger: CreditLedger }): Placement => {
+  const exclusion = billabilityExclusion(line, context.consumed);
+  if (exclusion !== undefined) return exclusion;
   const route = context.policy.routes.find((entry) => entry.id === line.routeId);
   const leg = route === undefined ? undefined : findLeg(route, line.legId);
   if (leg === undefined) return excluded('assembly.leg-unresolved', 'route or leg is not available');

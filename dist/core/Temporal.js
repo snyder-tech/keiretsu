@@ -21,13 +21,15 @@ const isCalendarDate = (value) => {
  * @category schemas
  */
 export const IsoDate = Schema.String.check(Schema.isPattern(ISO_DATE_PATTERN), Schema.makeFilter((value) => (isCalendarDate(value) ? undefined : `${value} is not a calendar date`))).pipe(Schema.brand('keiretsu/IsoDate'));
+/** UTC instant spelling with bounded time and fraction fields. @since 0.44.12 @category patterns */
+export const INSTANT_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,9})?Z$/;
 /**
  * RFC 3339 UTC instant with `Z` offset.
  *
  * @since 0.1.0
  * @category schemas
  */
-export const Instant = Schema.String.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/)).pipe(Schema.brand('keiretsu/Instant'));
+export const Instant = Schema.String.check(Schema.isPattern(INSTANT_PATTERN), Schema.makeFilter((value) => (isCalendarDate(value.slice(0, 10)) ? undefined : 'instant must name a Gregorian calendar date'))).pipe(Schema.brand('keiretsu/Instant'));
 /**
  * Accounting month `YYYY-MM`.
  *
@@ -70,7 +72,7 @@ export const Bitemporal = Schema.Struct({
     validFrom: IsoDate,
     validTo: Schema.optional(IsoDate),
     recordedAt: Instant,
-});
+}).check(Schema.makeFilter((stamp) => (stamp.validTo === undefined || stamp.validFrom < stamp.validTo ? undefined : 'validTo must follow validFrom')));
 /**
  * The accounting period containing a date.
  *
@@ -78,4 +80,22 @@ export const Bitemporal = Schema.Struct({
  * @category constructors
  */
 export const periodOf = (date) => Schema.decodeSync(Period)(date.slice(0, 7));
+/**
+ * Nanoseconds since the Unix epoch. UTC seconds are 00–59; leap-second text
+ * is rejected. Received fraction spelling is preserved by the Instant codec.
+ * Throws a schema error on invalid text, including impossible calendar dates.
+ * @since 0.44.12 @category conversions
+ */
+export const toEpochNanoseconds = (value) => {
+    const instant = Schema.decodeSync(Instant)(value);
+    const seconds = BigInt(Date.parse(`${instant.slice(0, 19)}Z`)) / 1000n;
+    const fraction = instant.slice(19, -1);
+    return seconds * 1000000000n + BigInt(fraction === '' ? '0' : fraction.slice(1).padEnd(9, '0'));
+};
+/** Compare instants by time, independent of fractional spelling. @since 0.44.12 @category ordering */
+export const compareInstants = (left, right) => {
+    const a = toEpochNanoseconds(left);
+    const b = toEpochNanoseconds(right);
+    return a < b ? -1 : a > b ? 1 : 0;
+};
 //# sourceMappingURL=Temporal.js.map

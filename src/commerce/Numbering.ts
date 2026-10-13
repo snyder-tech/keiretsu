@@ -11,7 +11,7 @@
  * @since 0.1.0
  * @module
  */
-import { Context, Effect, Layer, Ref, Schema } from 'effect';
+import { Context, Effect, Layer, Schema, SynchronizedRef } from 'effect';
 
 import type { ValidationIssue } from '../core/Issue.ts';
 
@@ -165,13 +165,14 @@ export class InvoiceNumberAllocator extends Context.Service<
   InvoiceNumberAllocator,
   { readonly allocate: (request: { readonly series: NumberingSeries; readonly issueDate: string }) => Effect.Effect<DocumentNumber, NumberingError> }
 >()('@snyder-tech/keiretsu/commerce/InvoiceNumberAllocator') {
-  /** An in-memory allocator for tests and dry runs. */
+  /**
+   * An in-memory allocator for tests and dry runs. Read, allocate and write run under the ref's
+   * lock, so concurrent fibers never receive the same number.
+   */
   static readonly inMemory: Layer.Layer<InvoiceNumberAllocator> = Layer.effect(InvoiceNumberAllocator)(
-    Effect.map(Ref.make(emptyLedger), (ref) => ({
+    Effect.map(SynchronizedRef.make(emptyLedger), (ref) => ({
       allocate: (request: { readonly series: NumberingSeries; readonly issueDate: string }) =>
-        Effect.flatMap(Ref.get(ref), (ledger) =>
-          Effect.flatMap(allocateNumber(ledger, request), (result) => Effect.as(Ref.set(ref, result.ledger), result.number)),
-        ),
+        SynchronizedRef.modifyEffect(ref, (ledger) => Effect.map(allocateNumber(ledger, request), (result) => [result.number, result.ledger] as const)),
     })),
   );
 }

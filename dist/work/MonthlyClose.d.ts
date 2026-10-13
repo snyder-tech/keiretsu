@@ -57,7 +57,9 @@ export type TimeStatus = (typeof TIME_STATUSES)[number];
  * @since 0.44.11
  * @category schemas
  */
-export declare const CloseMonth: Schema.String;
+export declare const CloseMonth: Schema.toEncoded<Schema.brand<Schema.String, "keiretsu/Period">>;
+/** Civil day with a string wire representation. @since 0.44.11 @category schemas */
+export declare const CloseDay: Schema.toEncoded<Schema.brand<Schema.String, "keiretsu/IsoDate">>;
 /** @since 0.44.11 @category calendar */
 export declare const addDays: (day: string, count: number) => string;
 /** 0 = Monday … 6 = Sunday. @since 0.44.11 @category calendar */
@@ -290,7 +292,7 @@ export declare const lockIssues: (input: LockCheckInput) => ReadonlyArray<Valida
  */
 export declare const CloseReceipt: Schema.Struct<{
     readonly entityId: Schema.brand<Schema.String, "keiretsu/EntityId">;
-    readonly month: Schema.String;
+    readonly month: Schema.toEncoded<Schema.brand<Schema.String, "keiretsu/Period">>;
     readonly periodRevision: Schema.Number;
     readonly lockedOn: Schema.brand<Schema.String, "keiretsu/IsoDate">;
     readonly lockedBy: Schema.TaggedStruct<"human", {

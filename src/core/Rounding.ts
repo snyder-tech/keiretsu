@@ -23,7 +23,18 @@ export const RoundingMode = Schema.Literals(['half-away-from-zero', 'half-even',
 /** @since 0.1.0 @category models */
 export type RoundingMode = typeof RoundingMode.Type;
 
-const roundsAway = (mode: RoundingMode, negative: boolean, quotient: bigint, twiceRemainder: bigint, divisor: bigint): boolean => {
+interface RoundingDecision {
+  readonly mode: RoundingMode;
+  readonly negative: boolean;
+  readonly quotient: bigint;
+  readonly twiceRemainder: bigint;
+  readonly divisor: bigint;
+}
+
+const halfTowardPositive = (twiceRemainder: bigint, divisor: bigint, negative: boolean): boolean => twiceRemainder > divisor || (twiceRemainder === divisor && !negative);
+const halfEven = (twiceRemainder: bigint, divisor: bigint, quotient: bigint): boolean => twiceRemainder > divisor || (twiceRemainder === divisor && quotient % 2n === 1n);
+
+const roundsAway = ({ mode, negative, quotient, twiceRemainder, divisor }: RoundingDecision): boolean => {
   if (twiceRemainder === 0n) return false;
   switch (mode) {
     case 'toward-zero':
@@ -37,9 +48,9 @@ const roundsAway = (mode: RoundingMode, negative: boolean, quotient: bigint, twi
     case 'half-away-from-zero':
       return twiceRemainder >= divisor;
     case 'half-toward-positive':
-      return twiceRemainder > divisor || (twiceRemainder === divisor && !negative);
+      return halfTowardPositive(twiceRemainder, divisor, negative);
     case 'half-even':
-      return twiceRemainder > divisor || (twiceRemainder === divisor && quotient % 2n === 1n);
+      return halfEven(twiceRemainder, divisor, quotient);
   }
 };
 
@@ -60,7 +71,7 @@ export const divide = (dividend: bigint, divisor: bigint, mode: RoundingMode): b
   const negative = dividend < 0n;
   const magnitude = negative ? -dividend : dividend;
   const quotient = magnitude / divisor;
-  const away = roundsAway(mode, negative, quotient, (magnitude % divisor) * 2n, divisor);
+  const away = roundsAway({ mode, negative, quotient, twiceRemainder: (magnitude % divisor) * 2n, divisor });
   const rounded = away ? quotient + 1n : quotient;
   return negative ? -rounded : rounded;
 };

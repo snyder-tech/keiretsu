@@ -12,18 +12,18 @@ across currencies and countries.
 - `Actor`, `Envelope`, `Hold`, `Issue` — human/agent actors, evidence and revisions, holds and decisions, validation issues
 
 ```ts
-import { Effect } from 'effect'
-import * as Money from '@snyder-tech/keiretsu/core/Money'
-import * as Currency from '@snyder-tech/keiretsu/core/Currency'
-import * as Decimal from '@snyder-tech/keiretsu/core/Decimal'
+import { Effect, Schema } from 'effect';
+import * as Money from '@snyder-tech/keiretsu/core/Money';
+import * as Currency from '@snyder-tech/keiretsu/core/Currency';
+import * as Decimal from '@snyder-tech/keiretsu/core/Decimal';
 
 const fee = Money.fromDecimal({
   amount: Decimal.fromScaled(Decimal.multiply(Decimal.toScaled('2000000'), Decimal.toScaled('1.15'))),
-  currency: 'PKR' as Currency.CurrencyCode,
+  currency: Schema.decodeSync(Currency.CurrencyCode)('PKR'),
   table: Currency.iso4217,
   rounding: 'half-away-from-zero',
-})
-Effect.runSync(fee) // { minor: '230000000', currency: 'PKR' }
+});
+Effect.runSync(fee); // { minor: '230000000', currency: 'PKR' }
 ```
 
 Effect is a peer dependency. ESM only. Apache-2.0.

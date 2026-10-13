@@ -70,6 +70,12 @@ export const revalueOpenBalances = (options) => Effect.map(Effect.forEach(option
     entries: outcomes.flatMap((outcome) => ('entry' in outcome ? [outcome.entry] : [])),
     issues: outcomes.flatMap((outcome) => ('issue' in outcome ? [outcome.issue] : [])),
 }));
+const settlementMagnitude = (part, whole, balance) => {
+    const magnitude = whole < 0n ? -whole : whole;
+    if (whole === 0n || part * whole < 0n || (part < 0n ? -part : part) > magnitude)
+        return Effect.fail(new SettlementExceedsBalance({ balanceId: balance.id }));
+    return Effect.succeed(magnitude);
+};
 /**
  * Settle a balance (or `portion` of it, same currency and sign) at `snapshot`.
  * Realized = functional amount settled − carrying amount relieved.
@@ -86,9 +92,7 @@ export const settle = (options) => Effect.gen(function* () {
     if (portion.currency !== balance.amount.currency)
         return yield* Effect.fail(new CurrencyMismatch({ left: portion.currency, right: balance.amount.currency }));
     const [part, whole] = [units(portion), units(balance.amount)];
-    const magnitude = whole < 0n ? -whole : whole;
-    if (whole === 0n || part * whole < 0n || (part < 0n ? -part : part) > magnitude)
-        return yield* Effect.fail(new SettlementExceedsBalance({ balanceId: balance.id }));
+    const magnitude = yield* settlementMagnitude(part, whole, balance);
     const direction = snapshot.base === portion.currency ? 'forward' : 'reverse';
     const settledFunctional = yield* convert({ amount: portion, snapshot, table: options.table, direction });
     // Pro-rata carrying amount; the sign of `whole` is moved to the numerator because `divide` needs a positive divisor.

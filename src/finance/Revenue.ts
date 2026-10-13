@@ -89,6 +89,7 @@ export type RecognitionOutcome = { readonly _tag: 'entry'; readonly entry: Recog
  * Recognise revenue to date for an obligation.
  *
  * Codes: `revenue.role-undetermined` (hold), `revenue.progress-invalid` (hold), `revenue.not-transferred` (hold).
+ * Fails with `CurrencyMismatch` when `recognisedToDate` is not in the allocated-price currency.
  *
  * @since 0.1.0
  * @category recognition
@@ -102,7 +103,7 @@ export const recognise = (options: {
   readonly progress: { readonly measured: Decimal.Decimal; readonly expectedTotal: Decimal.Decimal } | { readonly transferred: boolean };
   readonly evidence: ReadonlyArray<EvidenceRef>;
   readonly money: { readonly table: CurrencyTableShape; readonly rounding: RoundingMode };
-}): Effect.Effect<RecognitionOutcome, UnknownCurrency> =>
+}): Effect.Effect<RecognitionOutcome, UnknownCurrency | Money.CurrencyMismatch> =>
   Effect.gen(function* () {
     const { obligation } = options;
     const held = (code: string, message: string): RecognitionOutcome => ({ _tag: 'held', issue: issue(code, 'hold', obligation.id, message) });
@@ -124,7 +125,8 @@ export const recognise = (options: {
       progress = { measured: options.progress.measured, expectedTotal: options.progress.expectedTotal };
     }
     const cumulative = yield* Money.fromScaledAmount({ amount: cumulativeScaled, currency: obligation.allocatedPrice.currency, table: options.money.table, rounding: options.money.rounding });
-    const amount = Money.make(Money.units(cumulative) - Money.units(options.recognisedToDate), cumulative.currency);
+    // recognisedToDate in another currency is a caller error, never a cross-currency subtraction.
+    const amount = yield* Money.subtract(cumulative, options.recognisedToDate);
     const entry: RecognitionEntry = {
       derivationId: options.derivationId,
       obligationId: obligation.id,

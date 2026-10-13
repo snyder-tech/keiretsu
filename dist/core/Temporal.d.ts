@@ -19,6 +19,8 @@ export declare const ISO_DATE_PATTERN: RegExp;
 export declare const IsoDate: Schema.brand<Schema.String, "keiretsu/IsoDate">;
 /** @since 0.1.0 @category models */
 export type IsoDate = typeof IsoDate.Type;
+/** UTC instant spelling with bounded time and fraction fields. @since 0.44.12 @category patterns */
+export declare const INSTANT_PATTERN: RegExp;
 /**
  * RFC 3339 UTC instant with `Z` offset.
  *
@@ -93,4 +95,13 @@ export type Bitemporal = typeof Bitemporal.Type;
  * @category constructors
  */
 export declare const periodOf: (date: IsoDate) => Period;
+/**
+ * Nanoseconds since the Unix epoch. UTC seconds are 00–59; leap-second text
+ * is rejected. Received fraction spelling is preserved by the Instant codec.
+ * Throws a schema error on invalid text, including impossible calendar dates.
+ * @since 0.44.12 @category conversions
+ */
+export declare const toEpochNanoseconds: (value: Instant | string) => bigint;
+/** Compare instants by time, independent of fractional spelling. @since 0.44.12 @category ordering */
+export declare const compareInstants: (left: Instant | string, right: Instant | string) => -1 | 0 | 1;
 //# sourceMappingURL=Temporal.d.ts.map

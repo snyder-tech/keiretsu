@@ -89,7 +89,14 @@ export const fromScaled = (value: Scaled): Decimal => {
 };
 
 /** @since 0.1.0 @category math */
-export const fromInteger = (value: number | bigint): Scaled => asScaled(BigInt(value) * SCALE);
+export const fromInteger = (value: number | bigint): Scaled => {
+  if (typeof value === 'number' && !Number.isSafeInteger(value)) throw new RangeError('fromInteger requires a safe integer number or bigint');
+  return asScaled(BigInt(value) * SCALE);
+};
+
+const checkDigits = (digits: number): void => {
+  if (!Number.isInteger(digits) || digits < 0 || digits > SCALE_DIGITS) throw new RangeError(`digits must be an integer from 0 to ${SCALE_DIGITS}`);
+};
 
 /** @since 0.1.0 @category math */
 export const add = (left: Scaled, right: Scaled): Scaled => asScaled(left + right);
@@ -119,6 +126,7 @@ export const divideBy = (numerator: Scaled, denominator: Scaled): Scaled => {
  * @category math
  */
 export const round = (value: Scaled, digits: number, mode: RoundingMode): Scaled => {
+  checkDigits(digits);
   const step = 10n ** BigInt(SCALE_DIGITS - digits);
   return asScaled(divide(value, step, mode) * step);
 };
@@ -129,7 +137,10 @@ export const round = (value: Scaled, digits: number, mode: RoundingMode): Scaled
  * @since 0.1.0
  * @category conversions
  */
-export const toUnits = (value: Scaled, digits: number, mode: RoundingMode): bigint => divide(value, 10n ** BigInt(SCALE_DIGITS - digits), mode);
+export const toUnits = (value: Scaled, digits: number, mode: RoundingMode): bigint => {
+  checkDigits(digits);
+  return divide(value, 10n ** BigInt(SCALE_DIGITS - digits), mode);
+};
 
 /**
  * The fixed-point value of an integer count of `10^-digits` units.
@@ -137,4 +148,7 @@ export const toUnits = (value: Scaled, digits: number, mode: RoundingMode): bigi
  * @since 0.1.0
  * @category conversions
  */
-export const fromUnits = (units: bigint, digits: number): Scaled => asScaled(units * 10n ** BigInt(SCALE_DIGITS - digits));
+export const fromUnits = (units: bigint, digits: number): Scaled => {
+  checkDigits(digits);
+  return asScaled(units * 10n ** BigInt(SCALE_DIGITS - digits));
+};

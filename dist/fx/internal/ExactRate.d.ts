@@ -1,18 +1,14 @@
 /**
- * Exact rational rates. Published rates are decimals; inverse and cross rates
- * are exact fractions so that a conversion rounds exactly once (Council
- * Regulation (EC) 1103/97 art. 4 precedent: no rounded inverse or cross rates).
- * Internal.
- *
- * @since 0.1.0
- * @module
+ * Frozen legacy exact FX arithmetic. Published decimals, inverse and cross
+ * rates remain exact until conversion. Its unbounded arithmetic profile is
+ * retained for historical replay; new computational paths use core/ExactRatio
+ * with explicit bounds and typed failures.
+ * Internal. @since 0.1.0 @module
  */
 import { type Decimal } from '../../core/Decimal.ts';
+import { type Parts } from '../../core/internal/ExactRatioMath.ts';
 /** `numerator / denominator`, denominator positive. @since 0.1.0 @category models */
-export interface Ratio {
-    readonly numerator: bigint;
-    readonly denominator: bigint;
-}
+export type Ratio = Parts;
 /** @since 0.1.0 @category constants */
 export declare const ONE: Ratio;
 /** A canonical decimal as an exact ratio. @since 0.1.0 @category constructors */

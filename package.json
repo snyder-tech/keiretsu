@@ -1,6 +1,6 @@
 {
   "name": "@snyder-tech/keiretsu",
-  "version": "0.44.11",
+  "version": "0.44.12",
   "description": "Keiretsu commercial interoperability standard: Effect-first, strongly typed records for intercompany work, billing, costing, FX, transfer pricing, tax incentives and signed exchange between companies.",
   "keywords": [
     "cost-accounting",
@@ -34,12 +34,49 @@
     "docs/*.md",
     "LICENSE",
     "NOTICE",
-    "README.md"
+    "README.md",
+    "docs/**/*.json"
   ],
   "type": "module",
   "sideEffects": false,
   "exports": {
     "./package.json": "./package.json",
+    "./admission/AdmissionCommand": {
+      "types": "./dist/admission/AdmissionCommand.d.ts",
+      "default": "./dist/admission/AdmissionCommand.js"
+    },
+    "./admission/AdmissionCredential": {
+      "types": "./dist/admission/AdmissionCredential.d.ts",
+      "default": "./dist/admission/AdmissionCredential.js"
+    },
+    "./admission/AdmissionEntitlement": {
+      "types": "./dist/admission/AdmissionEntitlement.d.ts",
+      "default": "./dist/admission/AdmissionEntitlement.js"
+    },
+    "./admission/AdmissionError": {
+      "types": "./dist/admission/AdmissionError.d.ts",
+      "default": "./dist/admission/AdmissionError.js"
+    },
+    "./admission/AdmissionHost": {
+      "types": "./dist/admission/AdmissionHost.d.ts",
+      "default": "./dist/admission/AdmissionHost.js"
+    },
+    "./admission/AdmissionScopeRef": {
+      "types": "./dist/admission/AdmissionScopeRef.d.ts",
+      "default": "./dist/admission/AdmissionScopeRef.js"
+    },
+    "./admission/AdmissionTransition": {
+      "types": "./dist/admission/AdmissionTransition.d.ts",
+      "default": "./dist/admission/AdmissionTransition.js"
+    },
+    "./admission/Odoo20Observation": {
+      "types": "./dist/admission/Odoo20Observation.d.ts",
+      "default": "./dist/admission/Odoo20Observation.js"
+    },
+    "./admission/ScanObservation": {
+      "types": "./dist/admission/ScanObservation.d.ts",
+      "default": "./dist/admission/ScanObservation.js"
+    },
     "./commerce/Agreement": {
       "types": "./dist/commerce/Agreement.d.ts",
       "default": "./dist/commerce/Agreement.js"
@@ -183,6 +220,10 @@
     "./core/Envelope": {
       "types": "./dist/core/Envelope.d.ts",
       "default": "./dist/core/Envelope.js"
+    },
+    "./core/ExactRatio": {
+      "types": "./dist/core/ExactRatio.d.ts",
+      "default": "./dist/core/ExactRatio.js"
     },
     "./core/Hold": {
       "types": "./dist/core/Hold.d.ts",
@@ -336,6 +377,10 @@
       "types": "./dist/exchange/Party.d.ts",
       "default": "./dist/exchange/Party.js"
     },
+    "./exchange/Profile": {
+      "types": "./dist/exchange/Profile.d.ts",
+      "default": "./dist/exchange/Profile.js"
+    },
     "./exchange/Receipt": {
       "types": "./dist/exchange/Receipt.d.ts",
       "default": "./dist/exchange/Receipt.js"
@@ -355,6 +400,30 @@
     "./exchange/Transport": {
       "types": "./dist/exchange/Transport.d.ts",
       "default": "./dist/exchange/Transport.js"
+    },
+    "./exchange/V03Bundle": {
+      "types": "./dist/exchange/V03Bundle.d.ts",
+      "default": "./dist/exchange/V03Bundle.js"
+    },
+    "./exchange/V03Contracts": {
+      "types": "./dist/exchange/V03Contracts.d.ts",
+      "default": "./dist/exchange/V03Contracts.js"
+    },
+    "./exchange/V03Outbox": {
+      "types": "./dist/exchange/V03Outbox.d.ts",
+      "default": "./dist/exchange/V03Outbox.js"
+    },
+    "./exchange/V03Ports": {
+      "types": "./dist/exchange/V03Ports.d.ts",
+      "default": "./dist/exchange/V03Ports.js"
+    },
+    "./exchange/V03Receipt": {
+      "types": "./dist/exchange/V03Receipt.d.ts",
+      "default": "./dist/exchange/V03Receipt.js"
+    },
+    "./exchange/V03Receiver": {
+      "types": "./dist/exchange/V03Receiver.d.ts",
+      "default": "./dist/exchange/V03Receiver.js"
     },
     "./exchange/Verify": {
       "types": "./dist/exchange/Verify.d.ts",
@@ -500,6 +569,70 @@
       "types": "./dist/fx/Translation.d.ts",
       "default": "./dist/fx/Translation.js"
     },
+    "./mapping/CanonicalRef": {
+      "types": "./dist/mapping/CanonicalRef.d.ts",
+      "default": "./dist/mapping/CanonicalRef.js"
+    },
+    "./mapping/FieldAuthority": {
+      "types": "./dist/mapping/FieldAuthority.d.ts",
+      "default": "./dist/mapping/FieldAuthority.js"
+    },
+    "./mapping/MapSource": {
+      "types": "./dist/mapping/MapSource.d.ts",
+      "default": "./dist/mapping/MapSource.js"
+    },
+    "./mapping/MappingDefinition": {
+      "types": "./dist/mapping/MappingDefinition.d.ts",
+      "default": "./dist/mapping/MappingDefinition.js"
+    },
+    "./mapping/MappingReceipt": {
+      "types": "./dist/mapping/MappingReceipt.d.ts",
+      "default": "./dist/mapping/MappingReceipt.js"
+    },
+    "./mapping/MappingResult": {
+      "types": "./dist/mapping/MappingResult.d.ts",
+      "default": "./dist/mapping/MappingResult.js"
+    },
+    "./mapping/OdooIdentity": {
+      "types": "./dist/mapping/OdooIdentity.d.ts",
+      "default": "./dist/mapping/OdooIdentity.js"
+    },
+    "./mapping/SourceBinding": {
+      "types": "./dist/mapping/SourceBinding.d.ts",
+      "default": "./dist/mapping/SourceBinding.js"
+    },
+    "./mapping/SourceRecordRef": {
+      "types": "./dist/mapping/SourceRecordRef.d.ts",
+      "default": "./dist/mapping/SourceRecordRef.js"
+    },
+    "./service/Responsibility": {
+      "types": "./dist/service/Responsibility.d.ts",
+      "default": "./dist/service/Responsibility.js"
+    },
+    "./service/ServiceCase": {
+      "types": "./dist/service/ServiceCase.d.ts",
+      "default": "./dist/service/ServiceCase.js"
+    },
+    "./service/source/ConnectWise": {
+      "types": "./dist/service/source/ConnectWise.d.ts",
+      "default": "./dist/service/source/ConnectWise.js"
+    },
+    "./service/source/Halo": {
+      "types": "./dist/service/source/Halo.d.ts",
+      "default": "./dist/service/source/Halo.js"
+    },
+    "./service/source/Kantata": {
+      "types": "./dist/service/source/Kantata.d.ts",
+      "default": "./dist/service/source/Kantata.js"
+    },
+    "./service/source/Odoo": {
+      "types": "./dist/service/source/Odoo.d.ts",
+      "default": "./dist/service/source/Odoo.js"
+    },
+    "./service/source/SourceProjection": {
+      "types": "./dist/service/source/SourceProjection.d.ts",
+      "default": "./dist/service/source/SourceProjection.js"
+    },
     "./tax-incentives/BasePeriodFact": {
       "types": "./dist/tax-incentives/BasePeriodFact.d.ts",
       "default": "./dist/tax-incentives/BasePeriodFact.js"
@@ -616,6 +749,10 @@
       "types": "./dist/work/Code.d.ts",
       "default": "./dist/work/Code.js"
     },
+    "./work/CohortQualification": {
+      "types": "./dist/work/CohortQualification.d.ts",
+      "default": "./dist/work/CohortQualification.js"
+    },
     "./work/Disclosure": {
       "types": "./dist/work/Disclosure.d.ts",
       "default": "./dist/work/Disclosure.js"
@@ -660,6 +797,10 @@
       "types": "./dist/work/ProjectLink.d.ts",
       "default": "./dist/work/ProjectLink.js"
     },
+    "./work/SourceWorkMapping": {
+      "types": "./dist/work/SourceWorkMapping.d.ts",
+      "default": "./dist/work/SourceWorkMapping.js"
+    },
     "./work/StandingAuthority": {
       "types": "./dist/work/StandingAuthority.d.ts",
       "default": "./dist/work/StandingAuthority.js"
@@ -684,13 +825,25 @@
       "types": "./dist/work/WorkIds.d.ts",
       "default": "./dist/work/WorkIds.js"
     },
+    "./work/WorkItem": {
+      "types": "./dist/work/WorkItem.d.ts",
+      "default": "./dist/work/WorkItem.js"
+    },
     "./work/WorkObject": {
       "types": "./dist/work/WorkObject.d.ts",
       "default": "./dist/work/WorkObject.js"
     },
+    "./work/WorkObservation": {
+      "types": "./dist/work/WorkObservation.d.ts",
+      "default": "./dist/work/WorkObservation.js"
+    },
     "./work/WorkOrder": {
       "types": "./dist/work/WorkOrder.d.ts",
       "default": "./dist/work/WorkOrder.js"
+    },
+    "./work/WorkRequest": {
+      "types": "./dist/work/WorkRequest.d.ts",
+      "default": "./dist/work/WorkRequest.js"
     },
     "./work/WorkSource": {
       "types": "./dist/work/WorkSource.d.ts",
@@ -707,8 +860,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "node --test test/*.test.mjs"
+    "build": "tsc6 -p tsconfig.json",
+    "test": "node --test test/*.test.mjs",
+    "check:consumer": "node test/check-consumer.ts --package . --effect 4.0.2 --typescript npm:@typescript/typescript6@6.0.2 --esbuild ^0.28.2"
   },
   "devDependencies": {
     "effect": "4.0.2",

@@ -70,7 +70,9 @@ const checkReversal = (byId, allocation) => {
     const target = byId.get(allocation.reversesAllocationId);
     if (target === undefined)
         return [fault('allocation.reversal-target-unresolved', allocation.id, `allocation ${allocation.reversesAllocationId} is not in the set`, 'warning')];
-    return target.state === 'reversed' ? [] : [fault('allocation.reversal-target-active', allocation.id, 'a replacement points at a reversed allocation')];
+    return target.state === 'reversed'
+        ? []
+        : [fault('allocation.reversal-target-active', allocation.id, `allocation ${allocation.reversesAllocationId} is still active; a replacement may only point at a reversed allocation`)];
 };
 const checkEvent = (events, allocation) => {
     const event = events.get(allocation.eventId);

@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:exchange:envelope:0.3",
+  "type": "object",
+  "properties": {
+    "specVersion": {
+      "type": "string",
+      "enum": [
+        "0.3"
+      ]
+    },
+    "bundleId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+    },
+    "issuer": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+    },
+    "audience": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "entity"
+              ]
+            },
+            "entityId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "entityId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "counterparty"
+              ]
+            },
+            "counterpartyId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "counterpartyId"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "prevBundleDigest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        {
+          "not": {}
+        }
+      ]
+    },
+    "period": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])(?![\\s\\S])"
+    },
+    "issuedAt": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,9})?Z(?![\\s\\S])"
+    },
+    "disclosure": {
+      "type": "string",
+      "enum": [
+        "identified",
+        "pseudonymous",
+        "aggregate"
+      ]
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          },
+          "record": {},
+          "cohort": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "atomic-correction",
+                      "dependency"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "mode"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "not": {}
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "schema",
+          "record"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "contentDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "signature": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+\\.\\.[A-Za-z0-9_-]{86}(?![\\s\\S])"
+        },
+        {
+          "not": {}
+        }
+      ]
+    }
+  },
+  "required": [
+    "specVersion",
+    "bundleId",
+    "issuer",
+    "audience",
+    "seq",
+    "period",
+    "issuedAt",
+    "disclosure",
+    "records",
+    "contentDigest"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "exchange.content-digest",
+    "exchange.chain-and-audience",
+    "exchange.consistent-cohort-modes",
+    "exchange.mandatory-host-authorization"
+  ]
+}

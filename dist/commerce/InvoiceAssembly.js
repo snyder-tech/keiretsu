@@ -52,8 +52,8 @@ const placeCredit = (line, ledger) => {
     ledger.credited.set(line.correctsChargeId, next);
     return { _tag: 'credit', precedingInvoiceId: target.documentId };
 };
-const place = (line, context) => {
-    if (context.consumed.has(line.id))
+const billabilityExclusion = (line, consumed) => {
+    if (consumed.has(line.id))
         return excluded('assembly.already-consumed', 'the charge is already on a document');
     if (line.status === 'held')
         return excluded('assembly.held', `held: ${line.holdReasonCode ?? 'no reason code'}`);
@@ -61,6 +61,12 @@ const place = (line, context) => {
         return excluded('assembly.not-accrued', `status ${line.status} is not billable`);
     if (line.billingModeTag === 'no-charge')
         return excluded('assembly.no-charge', 'no-charge lines are recorded, not billed');
+    return undefined;
+};
+const place = (line, context) => {
+    const exclusion = billabilityExclusion(line, context.consumed);
+    if (exclusion !== undefined)
+        return exclusion;
     const route = context.policy.routes.find((entry) => entry.id === line.routeId);
     const leg = route === undefined ? undefined : findLeg(route, line.legId);
     if (leg === undefined)

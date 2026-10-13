@@ -34,7 +34,7 @@ import { FxSnapshotRef } from './FxPort.ts';
 import { fault, rule, runRules, toCheck } from './Invariant.ts';
 import { PartyRef, sameParty } from './Party.ts';
 import { activeMinutes, latestAllocations, type TransferAllocation } from './TransferAllocation.ts';
-import { findLeg, type TransferRoute } from './TransferRoute.ts';
+import { findLeg, type TransferRoute, type TransferLeg } from './TransferRoute.ts';
 
 /**
  * Charge lifecycle.
@@ -270,21 +270,25 @@ const lastDayOf = (period: string): string => {
   return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
 };
 
+const legIdentityIssues = (line: ChargeLine, leg: TransferLeg): ReadonlyArray<ValidationIssue> => [
+  ...(sameParty(leg.provider, line.provider) && sameParty(leg.recipient, line.recipient) ? [] : [fault('charge.parties-mismatch', line.id, 'charge parties differ from its leg')]),
+  ...(leg.agreementId === line.agreementId ? [] : [fault('charge.agreement-mismatch', line.id, 'charge agreement differs from its leg')]),
+  ...(leg.billingMode._tag === line.billingModeTag ? [] : [fault('charge.mode-mismatch', line.id, `charge mode ${line.billingModeTag} differs from leg mode ${leg.billingMode._tag}`)]),
+  ...(leg.invoiceCurrency === line.amount.currency ? [] : [fault('charge.currency-mismatch', line.id, 'amount is not in the leg invoice currency')]),
+];
+const legTreatmentIssues = (line: ChargeLine, leg: TransferLeg): ReadonlyArray<ValidationIssue> => [
+  ...(leg.relatedParty.status !== 'undetermined' || HELD_LEG_STATUSES.has(line.status)
+    ? []
+    : [fault('charge.not-held', line.id, 'charges on a leg with undetermined related-party status stay estimated or held')]),
+  ...(leg.billingMode._tag === 'cost-plus' && line.costBase !== undefined && line.costBase.digest !== leg.billingMode.costBase.digest
+    ? [fault('charge.cost-base-mismatch', line.id, 'charge cites a different cost-base digest than its leg')]
+    : []),
+];
+
 const checkAgainstLeg = (line: ChargeLine, route: TransferRoute): ReadonlyArray<ValidationIssue> => {
   const leg = findLeg(route, line.legId);
   if (leg === undefined) return [fault('charge.leg-unresolved', line.id, `leg ${line.legId} is not on route ${route.id}`)];
-  return [
-    ...(sameParty(leg.provider, line.provider) && sameParty(leg.recipient, line.recipient) ? [] : [fault('charge.parties-mismatch', line.id, 'charge parties differ from its leg')]),
-    ...(leg.agreementId === line.agreementId ? [] : [fault('charge.agreement-mismatch', line.id, 'charge agreement differs from its leg')]),
-    ...(leg.billingMode._tag === line.billingModeTag ? [] : [fault('charge.mode-mismatch', line.id, `charge mode ${line.billingModeTag} differs from leg mode ${leg.billingMode._tag}`)]),
-    ...(leg.invoiceCurrency === line.amount.currency ? [] : [fault('charge.currency-mismatch', line.id, 'amount is not in the leg invoice currency')]),
-    ...(leg.relatedParty.status !== 'undetermined' || HELD_LEG_STATUSES.has(line.status)
-      ? []
-      : [fault('charge.not-held', line.id, 'charges on a leg with undetermined related-party status stay estimated or held')]),
-    ...(leg.billingMode._tag === 'cost-plus' && line.costBase !== undefined && line.costBase.digest !== leg.billingMode.costBase.digest
-      ? [fault('charge.cost-base-mismatch', line.id, 'charge cites a different cost-base digest than its leg')]
-      : []),
-  ];
+  return [...legIdentityIssues(line, leg), ...legTreatmentIssues(line, leg)];
 };
 
 const checkMinutes = (line: ChargeLine, context: ChargeContext): ReadonlyArray<ValidationIssue> => {

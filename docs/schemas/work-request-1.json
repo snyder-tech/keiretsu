@@ -1,0 +1,645 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:work:request:1",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "supersedesDigest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        {
+          "not": {}
+        }
+      ]
+    },
+    "recordedAt": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,9})?Z(?![\\s\\S])"
+    },
+    "requestingParty": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "entity"
+              ]
+            },
+            "entityId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "entityId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "counterparty"
+              ]
+            },
+            "counterpartyId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "counterpartyId"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "requestedFrom": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "entity"
+              ]
+            },
+            "entityId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "entityId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "counterparty"
+              ]
+            },
+            "counterpartyId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "counterpartyId"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "submittedBy": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "human"
+              ]
+            },
+            "personId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            },
+            "actingFor": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "_tag": {
+                      "type": "string",
+                      "enum": [
+                        "entity"
+                      ]
+                    },
+                    "entityId": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                    }
+                  },
+                  "required": [
+                    "_tag",
+                    "entityId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "_tag": {
+                      "type": "string",
+                      "enum": [
+                        "counterparty"
+                      ]
+                    },
+                    "counterpartyId": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                    }
+                  },
+                  "required": [
+                    "_tag",
+                    "counterpartyId"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "_tag",
+            "personId",
+            "actingFor"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "agent"
+              ]
+            },
+            "agentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "operatorPersonId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "not": {}
+                }
+              ]
+            },
+            "sessionId": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                },
+                {
+                  "not": {}
+                }
+              ]
+            }
+          },
+          "required": [
+            "_tag",
+            "agentId",
+            "operatorPersonId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "system"
+              ]
+            },
+            "systemId": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "_tag",
+            "systemId"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requestedOutcome": {
+      "type": "string",
+      "minLength": 1
+    },
+    "relatedWork": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "pattern": "^(?:x-)?[a-z0-9]+(?:[.-][a-z0-9]+)*(?![\\s\\S])",
+            "maxLength": 64
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "_tag": {
+                    "type": "string",
+                    "enum": [
+                      "entity"
+                    ]
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                  }
+                },
+                "required": [
+                  "_tag",
+                  "entityId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_tag": {
+                    "type": "string",
+                    "enum": [
+                      "counterparty"
+                    ]
+                  },
+                  "counterpartyId": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                  }
+                },
+                "required": [
+                  "_tag",
+                  "counterpartyId"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "customer-contract",
+                  "proposal",
+                  "statement-of-work",
+                  "project",
+                  "project-phase",
+                  "task",
+                  "work-item",
+                  "case",
+                  "work-order",
+                  "work-order-line",
+                  "milestone",
+                  "deliverable",
+                  "capability",
+                  "internal-investment"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "^x-[a-z0-9]+(?:[.-][a-z0-9]+)*(?![\\s\\S])",
+                "maxLength": 64
+              }
+            ]
+          },
+          "recordId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              {
+                "not": {}
+              }
+            ]
+          }
+        },
+        "required": [
+          "system",
+          "owner",
+          "kind",
+          "recordId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "sourceMappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1
+              },
+              "recordKey": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "installationId",
+              "model",
+              "recordKey"
+            ],
+            "additionalProperties": false
+          },
+          "targets": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "object",
+                "properties": {
+                  "namespace": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "company",
+                      "legal-entity",
+                      "person",
+                      "engagement",
+                      "service",
+                      "work-order",
+                      "service-line",
+                      "activity",
+                      "time-entry",
+                      "economic-event",
+                      "billing-account",
+                      "subscription",
+                      "company-group",
+                      "invoice",
+                      "cost-object",
+                      "counterparty",
+                      "project",
+                      "brand",
+                      "tax-group",
+                      "work-item",
+                      "work-request",
+                      "service-case",
+                      "work-observation",
+                      "work-container"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "namespace",
+                  "kind",
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "namespace": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "company",
+                    "legal-entity",
+                    "person",
+                    "engagement",
+                    "service",
+                    "work-order",
+                    "service-line",
+                    "activity",
+                    "time-entry",
+                    "economic-event",
+                    "billing-account",
+                    "subscription",
+                    "company-group",
+                    "invoice",
+                    "cost-object",
+                    "counterparty",
+                    "project",
+                    "brand",
+                    "tax-group",
+                    "work-item",
+                    "work-request",
+                    "service-case",
+                    "work-observation",
+                    "work-container"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "namespace",
+                "kind",
+                "id"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "mappingId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mappingVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mappingDigest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "sourceDigest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "evidence": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "digest": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+                      },
+                      {
+                        "not": {}
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "ref"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "ref": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "digest": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+                    },
+                    {
+                      "not": {}
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "ref"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "source",
+          "targets",
+          "mappingId",
+          "mappingVersion",
+          "mappingDigest",
+          "sourceDigest",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+              },
+              {
+                "not": {}
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "revision",
+    "recordedAt",
+    "requestingParty",
+    "requestedFrom",
+    "submittedBy",
+    "title",
+    "requestedOutcome",
+    "relatedWork",
+    "sourceMappings",
+    "evidence"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "work.revision-chain",
+    "work.request-is-not-acceptance"
+  ]
+}

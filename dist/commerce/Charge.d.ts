@@ -2,6 +2,7 @@ import { Effect, Schema } from 'effect';
 import { type CurrencyCode, type CurrencyTableShape } from '../core/Currency.ts';
 import * as Decimal from '../core/Decimal.ts';
 import * as Money from '../core/Money.ts';
+import * as Exact from '../core/ExactRatio.ts';
 import { type BillingModeTag, type CostBaseRef } from './BillingMode.ts';
 import type { LeadTimeClass } from './CapacityTerms.ts';
 import type { FxSnapshotRef } from './FxPort.ts';
@@ -127,5 +128,24 @@ export interface ChargeInput {
  * @category computation
  */
 export declare const computeCharge: (input: ChargeInput) => Effect.Effect<ChargeComputation, ChargeComputationError>;
+/**
+ * New exact computation profile. The priced amount is an exact fraction;
+ * provider and invoice totals each round once at their minor-unit boundary.
+ * Historical computeCharge retains its frozen Decimal scale semantics.
+ * @since 0.44.12 @category models
+ */
+export interface ExactUnitPriceChargeComputation extends Omit<ChargeComputation, 'priced'> {
+    readonly computationProfile: 'exact-unit-price/1';
+    readonly priced: {
+        readonly amount: Exact.ExactRatio;
+        readonly currency: CurrencyCode;
+    };
+}
+/**
+ * Compute a unit-price charge without intermediate Decimal rounding. Exact
+ * product, discount and FX remain rational. Other billing modes fail explicitly.
+ * @since 0.44.12 @category computation
+ */
+export declare const computeExactUnitPriceCharge: (input: ChargeInput) => Effect.Effect<ExactUnitPriceChargeComputation, ChargeComputationError, never>;
 export {};
 //# sourceMappingURL=Charge.d.ts.map

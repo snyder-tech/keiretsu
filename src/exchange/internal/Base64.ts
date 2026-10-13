@@ -10,18 +10,26 @@
 const STANDARD = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const URL_SAFE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
+/** The third and fourth symbols are present only for their corresponding source bytes. */
+const trailingSymbol = (alphabet: string, index: number, present: boolean, pad: boolean): string => (present ? (alphabet[index] ?? '') : pad ? '=' : '');
+
+const encodeGroup = (bytes: Uint8Array, index: number, alphabet: string, pad: boolean): string => {
+  const a = bytes[index] ?? 0;
+  const b = bytes[index + 1] ?? 0;
+  const c = bytes[index + 2] ?? 0;
+  const triple = (a << 16) | (b << 8) | c;
+  const remaining = bytes.length - index;
+  let out = alphabet[(triple >> 18) & 63] ?? '';
+  out += alphabet[(triple >> 12) & 63] ?? '';
+  out += trailingSymbol(alphabet, (triple >> 6) & 63, remaining > 1, pad);
+  out += trailingSymbol(alphabet, triple & 63, remaining > 2, pad);
+  return out;
+};
+
 const encodeWith = (bytes: Uint8Array, alphabet: string, pad: boolean): string => {
   let out = '';
   for (let index = 0; index < bytes.length; index += 3) {
-    const a = bytes[index] ?? 0;
-    const b = bytes[index + 1] ?? 0;
-    const c = bytes[index + 2] ?? 0;
-    const triple = (a << 16) | (b << 8) | c;
-    const remaining = bytes.length - index;
-    out += alphabet[(triple >> 18) & 63] ?? '';
-    out += alphabet[(triple >> 12) & 63] ?? '';
-    out += remaining > 1 ? (alphabet[(triple >> 6) & 63] ?? '') : pad ? '=' : '';
-    out += remaining > 2 ? (alphabet[triple & 63] ?? '') : pad ? '=' : '';
+    out += encodeGroup(bytes, index, alphabet, pad);
   }
   return out;
 };

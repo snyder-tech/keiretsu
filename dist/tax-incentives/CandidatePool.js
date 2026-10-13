@@ -81,14 +81,16 @@ const isWageDerived = (line) => line.attribution.claimant === line.labour.employ
 const personMinutes = (scope, personId) => scope.index.set.labour
     .filter((fact) => fact.personId === personId && fact.employer === scope.claimant.entityId && includes(scope.taxYear, fact.workDate))
     .reduce((sum, fact) => sum + fact.minutes, 0);
-/** Per-person, per-category wage share; `undefined` marks an unknown person base. */
+/** A pool line's key: one wage base per (basis, category), the grain `buildCategories` reports. */
+const lineKey = (line) => `${line.attribution.basis}|${line.category}`;
+/** Per-person wage share for each line key; `undefined` marks an unknown person base. */
 const personShares = (scope, personId, lines) => {
     const base = regimeCostBase({ regime: scope.regime, claimant: scope.claimant, personId, taxYear: scope.taxYear, wages: scope.index.set.wages });
     if (base.amount._tag !== 'amount')
         return Effect.succeed(undefined);
     const minutes = new Map();
     for (const line of lines)
-        minutes.set(line.category, (minutes.get(line.category) ?? 0n) + BigInt(line.slice.minutes));
+        minutes.set(lineKey(line), (minutes.get(lineKey(line)) ?? 0n) + BigInt(line.slice.minutes));
     const covered = [...minutes.values()].reduce((sum, value) => sum + value, 0n);
     const other = BigInt(personMinutes(scope, personId)) - covered;
     const weights = [...[...minutes].map(([key, weight]) => ({ key, weight })), { key: UNCOVERED, weight: other > 0n ? other : 0n }];
@@ -101,29 +103,30 @@ const wageBases = (scope, lines) => Effect.gen(function* () {
     for (const person of persons) {
         const own = lines.filter((line) => line.labour.personId === person);
         const shares = yield* personShares(scope, person, own);
-        for (const line of own) {
+        // A person's share is added once per key, however many of their slices fall under it.
+        for (const key of new Set(own.map(lineKey))) {
             if (shares === undefined)
-                unknown.add(line.category);
+                unknown.add(key);
             else
-                totals.set(line.category, (totals.get(line.category) ?? 0n) + units(shares.get(line.category) ?? make(0n, scope.claimant.functionalCurrency)));
+                totals.set(key, (totals.get(key) ?? 0n) + units(shares.get(key) ?? make(0n, scope.claimant.functionalCurrency)));
         }
     }
-    const categories = [...new Set(lines.map((line) => line.category))];
-    return new Map(categories.map((category) => unknown.has(category)
-        ? [category, { _tag: 'unknown', reason: 'a person in this category has no includable wage facts' }]
-        : [category, { _tag: 'amount', money: make(totals.get(category) ?? 0n, scope.claimant.functionalCurrency) }]));
+    const keys = [...new Set(lines.map(lineKey))];
+    return new Map(keys.map((key) => unknown.has(key)
+        ? [key, { _tag: 'unknown', reason: 'a person in this category has no includable wage facts' }]
+        : [key, { _tag: 'amount', money: make(totals.get(key) ?? 0n, scope.claimant.functionalCurrency) }]));
 });
 const dedupe = (items, key) => [...new Map(items.map((item) => [key(item), item])).values()];
 const buildCategories = (scope, lines) => Effect.gen(function* () {
     const wageLines = lines.filter(isWageDerived);
     const bases = yield* wageBases(scope, wageLines);
-    const keys = dedupe(lines.map((line) => ({ category: line.category, basis: line.attribution.basis })), (entry) => `${entry.basis}|${entry.category}`);
+    const keys = dedupe(lines.map((line) => ({ category: line.category, basis: line.attribution.basis })), (entry) => lineKey({ attribution: entry, category: entry.category }));
     const result = [];
     for (const key of keys) {
         const own = lines.filter((line) => line.category === key.category && line.attribution.basis === key.basis);
         const inputs = (yield* Effect.forEach(own, lineInputs, { concurrency: 1 })).flat();
         const wageBase = own.every(isWageDerived)
-            ? (bases.get(key.category) ?? { _tag: 'unknown', reason: 'no wage base' })
+            ? (bases.get(lineKey({ attribution: key, category: key.category })) ?? { _tag: 'unknown', reason: 'no wage base' })
             : { _tag: 'not-applicable', reason: "a payer's cost is the charge it bears, measured by the finance package" };
         result.push({ category: key.category, basis: key.basis, minutes: own.reduce((sum, line) => sum + line.slice.minutes, 0), wageBase, inputs });
     }
@@ -160,7 +163,10 @@ const buildPool = (scope, lines) => Effect.gen(function* () {
         basePeriods: basePeriods(scope),
         function: FUNCTION,
         functionVersion: FUNCTION_VERSION,
-        inputs: [...dedupe(categories.flatMap((line) => line.inputs), (entry) => `${entry.kind}|${entry.id}`), ...wageRefs],
+        inputs: [
+            ...dedupe(categories.flatMap((line) => line.inputs), (entry) => `${entry.kind}|${entry.id}`),
+            ...wageRefs,
+        ],
         rules: [rule],
     };
 });

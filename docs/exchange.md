@@ -35,9 +35,19 @@ policies, and adopters combine them.
 - **Signatures fail closed.** A signed bundle with no key resolver is an error. A bundle whose
   audience is outside the issuer's control group must be signed. The signed header binds the
   audience, so a signature cannot be replayed to another party; `typ` separates bundles from receipts.
-- **Exactly-once effect.** Same bundle id and digest → `duplicate` receipt citing the original; same id,
+- **Sign only what you sealed.** `signBundle` and `signReceipt` recompute the digest from the text and
+  refuse stale or edited text instead of signing it.
+- **Receiver identity.** Hosts supply required `self` from their installation configuration. A bundle
+  addressed to another party yields a rejected receipt identifying the actual receiver, before admission.
+- **Receipt context.** `verifyReceipt` requires the original sent envelope's issuer, audience, bundle id,
+  sequence, specification version and content digest as `expected`. Key resolution and signed claims
+  derive from that expectation. An empty verification result establishes matching context and any
+  required signature; the receipt outcome still determines acceptance and does not prove business application.
+- **Serialized receipt tracking.** Same bundle id and digest → `duplicate` receipt citing the original; same id,
   different digest → `ReplayConflict`. A gap holds; a fork (`ChainFork`) halts the pair for a human.
-  Bundles failing digest or signature checks never advance or fork a chain.
+  Bundles failing digest, signature or audience checks never advance or fork a chain. The memory store
+  is process-local and reserves nothing between admission and commit. Hosts must provide an atomic
+  transaction joining application writes, durable idempotency and acknowledgment for durable guarantees.
 - **Open wire.** Unknown record kinds are rejected per record (`record.unknown-kind`), never as a bundle
   failure; `x-` members are preserved; an unknown major is rejected unread (`UnsupportedMajor`).
 - **Disclosure declared per kind.** A kind without a policy fails closed (`disclosure.undeclared`).
@@ -59,7 +69,7 @@ const sealed =
     specVersion,
     bundleId,
     issuer: nwIn,
-    audience: { kind: 'entity', id: nwUs },
+    audience: { _tag: 'entity', entityId: nwUs },
     seq: 1,
     period,
     issuedAt,
@@ -72,6 +82,7 @@ const result =
   yield *
   Receiver.receive({
     codec,
+    self: { _tag: 'entity', entityId: nwUs },
     text: sealed.text,
     policy: { controlGroup: new Set([nwUs, nwIn, nwPk]) },
     disclosure: { 'nw.charge': { kind: 'nw.charge', maxDisclosure: 'identified', personRefPaths: [], crossesControlGroup: 'allowed' } },
@@ -91,8 +102,8 @@ const result =
 - `KeyStore` (HSM / Key Vault signing), JWKS-URL and `did:web` resolvers with TTL cache, `TrustRegistry`.
 - Durable `SequenceStore` adapters (SQL, KV, file) and resend requests for held gaps.
 - HTTPS (`Idempotency-Key`), queue and MCP transports; CloudEvents binary mode.
-- Pseudonym keyring (`HMAC-SHA-256` per issuer/audience with epochs) and DPA references for
-  `identified` bundles crossing companies.
+- DPA references for `identified` bundles crossing companies. (The pseudonym scheme, `HMAC-SHA-256`
+  per issuer, audience and epoch, ships in `keiretsu/entity` `Pseudonym`.)
 - Merkle commitments inside aggregate bundles and two-party period close roots (v0.2); SD-JWT
   field-level disclosure (1.x).
 - JSON Schema 2020-12 generation and conformance vectors for the semantic invariants in `Invariants`.

@@ -1,0 +1,416 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:admission:entitlement:1",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+    },
+    "issuer": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "entity"
+              ]
+            },
+            "entityId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "entityId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "counterparty"
+              ]
+            },
+            "counterpartyId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "counterpartyId"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "_tag": {
+          "type": "string",
+          "enum": [
+            "event"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "_tag",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "slot": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "event-slot"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "not": {}
+        }
+      ]
+    },
+    "offeringId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+        },
+        {
+          "not": {}
+        }
+      ]
+    },
+    "order": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "sale-order"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "not": {}
+        }
+      ]
+    },
+    "buyer": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "_tag": {
+                  "type": "string",
+                  "enum": [
+                    "entity"
+                  ]
+                },
+                "entityId": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                }
+              },
+              "required": [
+                "_tag",
+                "entityId"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_tag": {
+                  "type": "string",
+                  "enum": [
+                    "counterparty"
+                  ]
+                },
+                "counterpartyId": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                }
+              },
+              "required": [
+                "_tag",
+                "counterpartyId"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        {
+          "not": {}
+        }
+      ]
+    },
+    "attendee": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "credentialGeneration": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "credentialId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+    },
+    "presentationDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "policy": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "single-entry"
+              ]
+            }
+          },
+          "required": [
+            "_tag"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "multi-entry"
+              ]
+            },
+            "maximumEntries": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "_tag",
+            "maximumEntries"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "reentry"
+              ]
+            }
+          },
+          "required": [
+            "_tag"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "status": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "active"
+              ]
+            }
+          },
+          "required": [
+            "_tag"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "revoked"
+              ]
+            },
+            "revokedAt": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,9})?Z(?![\\s\\S])"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "_tag",
+            "revokedAt",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "consumption": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "unused"
+              ]
+            }
+          },
+          "required": [
+            "_tag"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "redeemed"
+              ]
+            },
+            "redemptionId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            },
+            "redeemedAt": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,9})?Z(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "_tag",
+            "redemptionId",
+            "redeemedAt"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "validFrom": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,9})?Z(?![\\s\\S])"
+    },
+    "validTo": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,9})?Z(?![\\s\\S])"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+              },
+              {
+                "not": {}
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "issuer",
+    "event",
+    "attendee",
+    "revision",
+    "credentialGeneration",
+    "credentialId",
+    "presentationDigest",
+    "policy",
+    "status",
+    "consumption",
+    "validFrom",
+    "validTo",
+    "evidence"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "instant.gregorian-utc",
+    "admission.nonempty-validity",
+    "admission.entitlement-not-credential"
+  ]
+}

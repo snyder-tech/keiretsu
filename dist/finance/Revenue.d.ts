@@ -122,6 +122,7 @@ export type RecognitionOutcome = {
  * Recognise revenue to date for an obligation.
  *
  * Codes: `revenue.role-undetermined` (hold), `revenue.progress-invalid` (hold), `revenue.not-transferred` (hold).
+ * Fails with `CurrencyMismatch` when `recognisedToDate` is not in the allocated-price currency.
  *
  * @since 0.1.0
  * @category recognition
@@ -143,7 +144,7 @@ export declare const recognise: (options: {
         readonly table: CurrencyTableShape;
         readonly rounding: RoundingMode;
     };
-}) => Effect.Effect<RecognitionOutcome, UnknownCurrency>;
+}) => Effect.Effect<RecognitionOutcome, UnknownCurrency | Money.CurrencyMismatch>;
 /**
  * The revenue role for an obligation: gross revenue for a principal, net for an agent.
  *

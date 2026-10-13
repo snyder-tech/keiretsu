@@ -82,13 +82,19 @@ export type TpMethod = typeof TpMethod.Type;
  * @since 0.1.0
  * @category checks
  */
+const lowValueServiceIssues = (method: Extract<TpMethod, { readonly _tag: 'low-value-services' }>): ReadonlyArray<ValidationIssue> => {
+  const issues: Array<ValidationIssue> = [];
+  const screen = method.exclusionScreen;
+  if (screen.coreBusiness || screen.research || screen.financial || screen.extractive) {
+    issues.push(issue('tp.lvas-excluded', 'hold', method._tag, 'service falls in an excluded category; the simplified approach is not available'));
+  }
+  return issues;
+};
+
 export const methodFlags = (method: TpMethod, options: { readonly associated: boolean; readonly hasCurrentBenchmark: boolean }): ReadonlyArray<ValidationIssue> => {
   const issues: Array<ValidationIssue> = [];
   if (method._tag === 'low-value-services') {
-    const screen = method.exclusionScreen;
-    if (screen.coreBusiness || screen.research || screen.financial || screen.extractive) {
-      issues.push(issue('tp.lvas-excluded', 'hold', method._tag, 'service falls in an excluded category; the simplified approach is not available'));
-    }
+    issues.push(...lowValueServiceIssues(method));
   }
   const needsBenchmark = method._tag === 'cost-plus' || method._tag === 'tnmm' || method._tag === 'profit-split';
   if (options.associated && needsBenchmark && !options.hasCurrentBenchmark) {

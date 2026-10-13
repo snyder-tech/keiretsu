@@ -97,12 +97,6 @@ export declare const TpMethod: Schema.TaggedUnion<{
 }>;
 /** @since 0.1.0 @category models */
 export type TpMethod = typeof TpMethod.Type;
-/**
- * Method-level flags. Codes: `tp.lvas-excluded` (hold), `tp.benchmark-required` (hold).
- *
- * @since 0.1.0
- * @category checks
- */
 export declare const methodFlags: (method: TpMethod, options: {
     readonly associated: boolean;
     readonly hasCurrentBenchmark: boolean;

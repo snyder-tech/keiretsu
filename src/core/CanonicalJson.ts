@@ -188,6 +188,11 @@ const render = (value: unknown, at: string): string => {
   if (typeof value === 'string') return canonicalString(value, at);
   if (Array.isArray(value)) return `[${value.map((entry, position) => render(entry, `${at}[${position}]`)).join(',')}]`;
   if (typeof value === 'object') {
+    // Only plain JSON objects are canonical: a Date, Map, Set or class instance would otherwise
+    // render as `{}` (or its own enumerable fields) and silently digest the wrong content.
+    const prototype: unknown = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null)
+      throw new CanonicalJsonError({ code: 'core.json-invalid', at, reason: `unsupported ${Object.prototype.toString.call(value)}; only plain objects are canonical` });
     const entries = Object.entries(value)
       .filter(([, entry]) => entry !== undefined)
       .sort(([left], [right]) => compareCodeUnits(left, right));

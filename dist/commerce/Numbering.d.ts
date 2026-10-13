@@ -127,7 +127,10 @@ declare const InvoiceNumberAllocator_base: Context.ServiceClass<InvoiceNumberAll
  * @category services
  */
 export declare class InvoiceNumberAllocator extends InvoiceNumberAllocator_base {
-    /** An in-memory allocator for tests and dry runs. */
+    /**
+     * An in-memory allocator for tests and dry runs. Read, allocate and write run under the ref's
+     * lock, so concurrent fibers never receive the same number.
+     */
     static readonly inMemory: Layer.Layer<InvoiceNumberAllocator>;
 }
 export {};

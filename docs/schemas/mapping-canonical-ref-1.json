@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:mapping:canonical-ref:1",
+  "type": "object",
+  "properties": {
+    "namespace": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "company",
+        "legal-entity",
+        "person",
+        "engagement",
+        "service",
+        "work-order",
+        "service-line",
+        "activity",
+        "time-entry",
+        "economic-event",
+        "billing-account",
+        "subscription",
+        "company-group",
+        "invoice",
+        "cost-object",
+        "counterparty",
+        "project",
+        "brand",
+        "tax-group",
+        "work-item",
+        "work-request",
+        "service-case",
+        "work-observation",
+        "work-container"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "namespace",
+    "kind",
+    "id"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "mapping.existing-identity"
+  ]
+}

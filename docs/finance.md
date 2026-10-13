@@ -94,9 +94,10 @@ fx-missing, unrealised-profit).
   modifications, costs to obtain (ASC 340-40).
 - Transfer pricing: agreements and schedules, management-fee allocation keys, guarantees, withholding
   determinations, PE flags, documentation obligations, CbCR thresholds, weekly close and IC matching
-  with difference-by-cause, revaluation, India 35–65 fallback (arithmetic mean with tolerance).
-- Eliminations of open intercompany balances (receivable vs payable) and CTA routing; control
-  determination gating for consolidation.
+  with difference-by-cause, India 35–65 fallback (arithmetic mean with tolerance). Period-end
+  revaluation, translated elimination of matched receivable/payable pairs and CTA routing ship in
+  `keiretsu/fx` (`Revaluation`, `Elimination`, `Translation`).
+- Control determination gating for consolidation.
 - Derivation receipts (`explain`) emitted by every computation; JSON Schema and conformance vectors.
 - Jurisdiction rule packs as separately versioned data packages.
 

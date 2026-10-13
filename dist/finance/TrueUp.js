@@ -74,6 +74,20 @@ const downwardFlag = (rules, party, date) => {
         return issue('true-up.rule-missing', 'hold', party.entityId, `no downward-adjustment rule data for ${party.jurisdiction}; held`);
     return rule.downwardBarred ? issue('true-up.downward-barred', 'hold', party.entityId, `adjustment lowers taxable income in ${party.jurisdiction} (${rule.citation}); flag, do not book`) : undefined;
 };
+const trueUpEvidenceIssues = (measurement, options, currency) => {
+    const issues = [];
+    if (measurement.basis !== 'actual')
+        issues.push(issue('true-up.measurement-held', 'hold', measurement.definitionId, 'true-ups use the actual cost base'));
+    if (measurement.status === 'held')
+        issues.push(issue('true-up.measurement-held', 'hold', measurement.definitionId, 'cost-base measurement is held'));
+    for (const charge of options.billedCharges) {
+        if (charge.costBaseDigest !== measurement.definitionDigest)
+            issues.push(issue('true-up.cost-base-mismatch', 'error', charge.chargeId, 'charge cites a different cost-base definition'));
+        if (charge.amount.currency !== currency)
+            issues.push(issue('true-up.currency', 'error', charge.chargeId, `charge in ${charge.amount.currency}, base in ${currency}`));
+    }
+    return issues;
+};
 /**
  * Propose a true-up for a period.
  *
@@ -86,17 +100,7 @@ const downwardFlag = (rules, party, date) => {
 export const trueUp = (options) => Effect.map(costPlusAmount({ measurement: options.actualCostBase, markup: options.markup, table: options.table, rounding: options.rounding }), (target) => {
     const measurement = options.actualCostBase;
     const currency = target.currency;
-    const issues = [];
-    if (measurement.basis !== 'actual')
-        issues.push(issue('true-up.measurement-held', 'hold', measurement.definitionId, 'true-ups use the actual cost base'));
-    if (measurement.status === 'held')
-        issues.push(issue('true-up.measurement-held', 'hold', measurement.definitionId, 'cost-base measurement is held'));
-    for (const charge of options.billedCharges) {
-        if (charge.costBaseDigest !== measurement.definitionDigest)
-            issues.push(issue('true-up.cost-base-mismatch', 'error', charge.chargeId, 'charge cites a different cost-base definition'));
-        if (charge.amount.currency !== currency)
-            issues.push(issue('true-up.currency', 'error', charge.chargeId, `charge in ${charge.amount.currency}, base in ${currency}`));
-    }
+    const issues = trueUpEvidenceIssues(measurement, options, currency);
     const billedUnits = options.billedCharges.filter((charge) => charge.amount.currency === currency).reduce((sum, charge) => sum + Money.units(charge.amount), 0n);
     const billed = Money.make(billedUnits, currency);
     const difference = Money.units(target) - billedUnits;

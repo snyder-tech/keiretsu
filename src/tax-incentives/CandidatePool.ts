@@ -112,11 +112,14 @@ interface PoolScope {
 const ref = (kind: string, id: string, value: unknown): Effect.Effect<SubjectRef, CanonicalJsonError> => Effect.map(digestValue(value), (digest) => ({ kind, id, digest }));
 
 const lineInputs = (line: Line): Effect.Effect<ReadonlyArray<SubjectRef>, CanonicalJsonError> =>
-  Effect.all([
-    Effect.succeed<SubjectRef>({ kind: 'labour-event', id: line.labour.eventId, digest: line.labour.eventDigest }),
-    ref('tax-activity-slice', line.slice.id, line.slice),
-    ref('claimant-attribution', line.attribution.id, line.attribution),
-  ], { concurrency: 1 });
+  Effect.all(
+    [
+      Effect.succeed<SubjectRef>({ kind: 'labour-event', id: line.labour.eventId, digest: line.labour.eventDigest }),
+      ref('tax-activity-slice', line.slice.id, line.slice),
+      ref('claimant-attribution', line.attribution.id, line.attribution),
+    ],
+    { concurrency: 1 },
+  );
 
 /** Weight key for recorded minutes no eligible slice covers (never a category name). */
 const UNCOVERED = '#uncovered';
@@ -128,12 +131,15 @@ const personMinutes = (scope: PoolScope, personId: string): number =>
     .filter((fact) => fact.personId === personId && fact.employer === scope.claimant.entityId && includes(scope.taxYear, fact.workDate))
     .reduce((sum, fact) => sum + fact.minutes, 0);
 
-/** Per-person, per-category wage share; `undefined` marks an unknown person base. */
+/** A pool line's key: one wage base per (basis, category), the grain `buildCategories` reports. */
+const lineKey = (line: { readonly attribution: { readonly basis: string }; readonly category: string }): string => `${line.attribution.basis}|${line.category}`;
+
+/** Per-person wage share for each line key; `undefined` marks an unknown person base. */
 const personShares = (scope: PoolScope, personId: PersonId, lines: ReadonlyArray<Line>): Effect.Effect<ReadonlyMap<string, Money> | undefined> => {
   const base = regimeCostBase({ regime: scope.regime, claimant: scope.claimant, personId, taxYear: scope.taxYear, wages: scope.index.set.wages });
   if (base.amount._tag !== 'amount') return Effect.succeed(undefined);
   const minutes = new Map<string, bigint>();
-  for (const line of lines) minutes.set(line.category, (minutes.get(line.category) ?? 0n) + BigInt(line.slice.minutes));
+  for (const line of lines) minutes.set(lineKey(line), (minutes.get(lineKey(line)) ?? 0n) + BigInt(line.slice.minutes));
   const covered = [...minutes.values()].reduce((sum, value) => sum + value, 0n);
   const other = BigInt(personMinutes(scope, personId)) - covered;
   const weights = [...[...minutes].map(([key, weight]) => ({ key, weight })), { key: UNCOVERED, weight: other > 0n ? other : 0n }];
@@ -148,17 +154,18 @@ const wageBases = (scope: PoolScope, lines: ReadonlyArray<Line>): Effect.Effect<
     for (const person of persons) {
       const own = lines.filter((line) => line.labour.personId === person);
       const shares = yield* personShares(scope, person, own);
-      for (const line of own) {
-        if (shares === undefined) unknown.add(line.category);
-        else totals.set(line.category, (totals.get(line.category) ?? 0n) + units(shares.get(line.category) ?? make(0n, scope.claimant.functionalCurrency)));
+      // A person's share is added once per key, however many of their slices fall under it.
+      for (const key of new Set(own.map(lineKey))) {
+        if (shares === undefined) unknown.add(key);
+        else totals.set(key, (totals.get(key) ?? 0n) + units(shares.get(key) ?? make(0n, scope.claimant.functionalCurrency)));
       }
     }
-    const categories = [...new Set(lines.map((line) => line.category))];
+    const keys = [...new Set(lines.map(lineKey))];
     return new Map(
-      categories.map((category): readonly [string, CostBaseAmount] =>
-        unknown.has(category)
-          ? [category, { _tag: 'unknown', reason: 'a person in this category has no includable wage facts' }]
-          : [category, { _tag: 'amount', money: make(totals.get(category) ?? 0n, scope.claimant.functionalCurrency) }],
+      keys.map((key): readonly [string, CostBaseAmount] =>
+        unknown.has(key)
+          ? [key, { _tag: 'unknown', reason: 'a person in this category has no includable wage facts' }]
+          : [key, { _tag: 'amount', money: make(totals.get(key) ?? 0n, scope.claimant.functionalCurrency) }],
       ),
     );
   });
@@ -171,14 +178,14 @@ const buildCategories = (scope: PoolScope, lines: ReadonlyArray<Line>): Effect.E
     const bases = yield* wageBases(scope, wageLines);
     const keys = dedupe(
       lines.map((line) => ({ category: line.category, basis: line.attribution.basis })),
-      (entry) => `${entry.basis}|${entry.category}`,
+      (entry) => lineKey({ attribution: entry, category: entry.category }),
     );
     const result: Array<CandidateCategory> = [];
     for (const key of keys) {
       const own = lines.filter((line) => line.category === key.category && line.attribution.basis === key.basis);
       const inputs = (yield* Effect.forEach(own, lineInputs, { concurrency: 1 })).flat();
       const wageBase: CostBaseAmount = own.every(isWageDerived)
-        ? (bases.get(key.category) ?? { _tag: 'unknown', reason: 'no wage base' })
+        ? (bases.get(lineKey({ attribution: key, category: key.category })) ?? { _tag: 'unknown', reason: 'no wage base' })
         : { _tag: 'not-applicable', reason: "a payer's cost is the charge it bears, measured by the finance package" };
       result.push({ category: key.category, basis: key.basis, minutes: own.reduce((sum, line) => sum + line.slice.minutes, 0), wageBase, inputs });
     }
@@ -221,7 +228,13 @@ const buildPool = (scope: PoolScope, lines: ReadonlyArray<Line>): Effect.Effect<
       basePeriods: basePeriods(scope),
       function: FUNCTION,
       functionVersion: FUNCTION_VERSION,
-      inputs: [...dedupe(categories.flatMap((line) => line.inputs), (entry) => `${entry.kind}|${entry.id}`), ...wageRefs],
+      inputs: [
+        ...dedupe(
+          categories.flatMap((line) => line.inputs),
+          (entry) => `${entry.kind}|${entry.id}`,
+        ),
+        ...wageRefs,
+      ],
       rules: [rule],
     };
   });
@@ -256,7 +269,12 @@ export const candidatePools = (set: IncentiveSet, regimeId: string, taxYear: str
       const claimant = screened.index.entities.get(claimantId);
       if (claimant === undefined) continue;
       const scope: PoolScope = { index: screened.index, regime, claimant, taxYear: byLabel(claimant.fiscalYearEndMonth, taxYear) };
-      pools.push(yield* buildPool(scope, lines.filter((line) => line.attribution.claimant === claimantId)));
+      pools.push(
+        yield* buildPool(
+          scope,
+          lines.filter((line) => line.attribution.claimant === claimantId),
+        ),
+      );
     }
     const regimeIssues = screened.report.issues.filter((entry) => entry.subject === `regime:${regime.id}`);
     return { pools, report: report([...regimeIssues, ...pools.flatMap(poolIssues)]) };

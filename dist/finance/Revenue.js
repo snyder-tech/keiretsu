@@ -64,6 +64,7 @@ export const RecognitionEntry = Schema.Struct({
  * Recognise revenue to date for an obligation.
  *
  * Codes: `revenue.role-undetermined` (hold), `revenue.progress-invalid` (hold), `revenue.not-transferred` (hold).
+ * Fails with `CurrencyMismatch` when `recognisedToDate` is not in the allocated-price currency.
  *
  * @since 0.1.0
  * @category recognition
@@ -95,7 +96,8 @@ export const recognise = (options) => Effect.gen(function* () {
         progress = { measured: options.progress.measured, expectedTotal: options.progress.expectedTotal };
     }
     const cumulative = yield* Money.fromScaledAmount({ amount: cumulativeScaled, currency: obligation.allocatedPrice.currency, table: options.money.table, rounding: options.money.rounding });
-    const amount = Money.make(Money.units(cumulative) - Money.units(options.recognisedToDate), cumulative.currency);
+    // recognisedToDate in another currency is a caller error, never a cross-currency subtraction.
+    const amount = yield* Money.subtract(cumulative, options.recognisedToDate);
     const entry = {
         derivationId: options.derivationId,
         obligationId: obligation.id,

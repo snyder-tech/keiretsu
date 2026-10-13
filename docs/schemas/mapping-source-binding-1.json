@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:mapping:source-binding:1",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "installationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recordKey": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "installationId",
+        "model",
+        "recordKey"
+      ],
+      "additionalProperties": false
+    },
+    "canonical": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "company",
+            "legal-entity",
+            "person",
+            "engagement",
+            "service",
+            "work-order",
+            "service-line",
+            "activity",
+            "time-entry",
+            "economic-event",
+            "billing-account",
+            "subscription",
+            "company-group",
+            "invoice",
+            "cost-object",
+            "counterparty",
+            "project",
+            "brand",
+            "tax-group",
+            "work-item",
+            "work-request",
+            "service-case",
+            "work-observation",
+            "work-container"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "namespace",
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "relationship": {
+      "type": "string",
+      "enum": [
+        "kind-equivalence",
+        "branch-of",
+        "contact-of",
+        "projection-of"
+      ]
+    },
+    "effectiveFrom": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(?![\\s\\S])"
+    },
+    "effectiveTo": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(?![\\s\\S])"
+        },
+        {
+          "not": {}
+        }
+      ]
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "digest": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+                },
+                {
+                  "not": {}
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "ref"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+              },
+              {
+                "not": {}
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "source",
+    "canonical",
+    "relationship",
+    "effectiveFrom",
+    "evidenceRefs"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "mapping.binding-evidence",
+    "mapping.binding-uniqueness"
+  ]
+}

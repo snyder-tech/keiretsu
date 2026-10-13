@@ -22,7 +22,7 @@ import { Schema } from 'effect';
 import { EntityId, HumanActorSchema } from '../core/Actor.ts';
 import { Sha256 } from '../core/CanonicalJson.ts';
 import { issue, type ValidationIssue } from '../core/Issue.ts';
-import { IsoDate } from '../core/Temporal.ts';
+import { IsoDate, Period } from '../core/Temporal.ts';
 
 // ---------------------------------------------------------------- lifecycle
 
@@ -73,14 +73,14 @@ export type TimeStatus = (typeof TIME_STATUSES)[number];
  * @since 0.44.11
  * @category schemas
  */
-export const CloseMonth = Schema.String.check(Schema.isPattern(/^\d{4}-(0[1-9]|1[0-2])$/));
+export const CloseMonth = Schema.toEncoded(Period);
+
+/** Civil day with a string wire representation. @since 0.44.11 @category schemas */
+export const CloseDay = Schema.toEncoded(IsoDate);
 
 const DAY_MS = 86_400_000;
 
-const toUtc = (day: string): number => {
-  const [year, month, date] = day.split('-').map(Number);
-  return Date.UTC(year ?? 1970, (month ?? 1) - 1, date ?? 1);
-};
+const toUtc = (day: string): number => new Date(`${day}T00:00:00Z`).getTime();
 
 const fromUtc = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
 
@@ -98,8 +98,9 @@ export const weekStartOf = (day: string): string => addDays(day, -weekdayIndex(d
 
 /** First and last civil day of a month. @since 0.44.11 @category calendar */
 export const monthBounds = (month: string): { readonly fromDay: string; readonly toDay: string } => {
-  const [year, monthNumber] = month.split('-').map(Number);
-  return { fromDay: `${month}-01`, toDay: fromUtc(Date.UTC(year ?? 1970, monthNumber ?? 1, 0)) };
+  const lastDay = new Date(toUtc(`${month}-01`));
+  lastDay.setUTCMonth(lastDay.getUTCMonth() + 1, 0);
+  return { fromDay: `${month}-01`, toDay: fromUtc(lastDay.getTime()) };
 };
 
 /** Every day from `fromDay` to `toDay`, inclusive. @since 0.44.11 @category calendar */

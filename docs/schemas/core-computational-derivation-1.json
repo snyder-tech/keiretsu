@@ -1,0 +1,300 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:core:computational-derivation:1",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+            },
+            {
+              "not": {}
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "outputDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "digest"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "digest"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "function": {
+      "type": "string",
+      "minLength": 1
+    },
+    "functionVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "specVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(?![\\s\\S])"
+    },
+    "computedBy": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "human"
+              ]
+            },
+            "personId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            },
+            "actingFor": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "_tag": {
+                      "type": "string",
+                      "enum": [
+                        "entity"
+                      ]
+                    },
+                    "entityId": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                    }
+                  },
+                  "required": [
+                    "_tag",
+                    "entityId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "_tag": {
+                      "type": "string",
+                      "enum": [
+                        "counterparty"
+                      ]
+                    },
+                    "counterpartyId": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                    }
+                  },
+                  "required": [
+                    "_tag",
+                    "counterpartyId"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "_tag",
+            "personId",
+            "actingFor"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "agent"
+              ]
+            },
+            "agentId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "operatorPersonId": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "not": {}
+                }
+              ]
+            },
+            "sessionId": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}(?![\\s\\S])"
+                },
+                {
+                  "not": {}
+                }
+              ]
+            }
+          },
+          "required": [
+            "_tag",
+            "agentId",
+            "operatorPersonId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "_tag": {
+              "type": "string",
+              "enum": [
+                "system"
+              ]
+            },
+            "systemId": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "_tag",
+            "systemId"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "computedAt": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,9})?Z(?![\\s\\S])"
+    },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "exact-computation/1"
+      ]
+    },
+    "configurations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "digest"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "output",
+    "outputDigest",
+    "inputs",
+    "rules",
+    "function",
+    "functionVersion",
+    "specVersion",
+    "computedBy",
+    "computedAt",
+    "profile",
+    "configurations"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "derivation.artifacts-available",
+    "derivation.rule-authority"
+  ]
+}

@@ -14,7 +14,7 @@ import { digestValue } from "../core/CanonicalJson.js";
 import { Decimal, toScaled } from "../core/Decimal.js";
 import { AssertionFields, RevisionFields, revisionChain, verifiedHasEvidence } from "../core/Envelope.js";
 import { issue } from "../core/Issue.js";
-import { Instant, IsoDate } from "../core/Temporal.js";
+import { compareInstants, Instant, IsoDate } from "../core/Temporal.js";
 import { ObservationConflict } from "./FxError.js";
 import { FxSeriesId } from "./FxSeries.js";
 /**
@@ -89,7 +89,7 @@ export const fromObservations = (observations) => Effect.reduce([...observations
  */
 export const latest = (log, options) => log
     .filter((entry) => entry.series === options.series && entry.rateDate === options.rateDate)
-    .filter((entry) => options.knownAt === undefined || entry.recordedAt <= options.knownAt)
+    .filter((entry) => options.knownAt === undefined || compareInstants(entry.recordedAt, options.knownAt) <= 0)
     .reduce((best, entry) => (best === undefined || entry.revision > best.revision ? entry : best), undefined);
 /**
  * Policy checks of an observation against its series definition.

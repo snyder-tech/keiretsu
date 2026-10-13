@@ -15,7 +15,7 @@ import { digestValue, type Sha256 } from '../core/CanonicalJson.ts';
 import { Decimal, toScaled } from '../core/Decimal.ts';
 import { AssertionFields, RevisionFields, revisionChain, verifiedHasEvidence } from '../core/Envelope.ts';
 import { issue, type ValidationIssue } from '../core/Issue.ts';
-import { Instant, IsoDate } from '../core/Temporal.ts';
+import { compareInstants, Instant, IsoDate } from '../core/Temporal.ts';
 
 import { ObservationConflict } from './FxError.ts';
 import { FxSeriesId, type FxSeries } from './FxSeries.ts';
@@ -62,8 +62,7 @@ export const observationDigest = (observation: FxObservation): Effect.Effect<Sha
 
 const sameKey = (left: FxObservation, right: FxObservation): boolean => left.series === right.series && left.rateDate === right.rateDate;
 
-const conflict = (observation: FxObservation, reason: string): ObservationConflict =>
-  new ObservationConflict({ series: observation.series, rateDate: observation.rateDate, reason });
+const conflict = (observation: FxObservation, reason: string): ObservationConflict => new ObservationConflict({ series: observation.series, rateDate: observation.rateDate, reason });
 
 const sameRevision = (left: FxObservation, right: FxObservation): Effect.Effect<ReadonlyArray<FxObservation> | undefined, ObservationConflict> =>
   Effect.gen(function* () {
@@ -112,13 +111,10 @@ export const fromObservations = (observations: ReadonlyArray<FxObservation>): Ef
  * @since 0.1.0
  * @category accessors
  */
-export const latest = (
-  log: ReadonlyArray<FxObservation>,
-  options: { readonly series: FxSeriesId; readonly rateDate: IsoDate; readonly knownAt?: Instant | undefined },
-): FxObservation | undefined =>
+export const latest = (log: ReadonlyArray<FxObservation>, options: { readonly series: FxSeriesId; readonly rateDate: IsoDate; readonly knownAt?: Instant | undefined }): FxObservation | undefined =>
   log
     .filter((entry) => entry.series === options.series && entry.rateDate === options.rateDate)
-    .filter((entry) => options.knownAt === undefined || entry.recordedAt <= options.knownAt)
+    .filter((entry) => options.knownAt === undefined || compareInstants(entry.recordedAt, options.knownAt) <= 0)
     .reduce<FxObservation | undefined>((best, entry) => (best === undefined || entry.revision > best.revision ? entry : best), undefined);
 
 /**

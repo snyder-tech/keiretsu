@@ -30,4 +30,18 @@ export const Derivation = Schema.Struct({
     computedBy: Actor,
     computedAt: Instant,
 }).check(Schema.makeFilter((derivation) => (derivation.inputs.every((input) => input.digest !== undefined) ? undefined : 'every derivation input is pinned by digest')));
+const PinnedSubjectRef = Schema.Struct({ ...SubjectRef.fields, digest: Sha256 });
+/**
+ * Digest-pinned computation profile. Historical Derivation remains the legacy
+ * read codec: its rules may omit digests. New computation receipts use this
+ * profile and name every computational rule and configuration snapshot.
+ * @since 0.44.12 @category schemas
+ */
+export const ComputationalDerivation = Schema.Struct({
+    ...Derivation.fields,
+    profile: Schema.Literal('exact-computation/1'),
+    inputs: Schema.Array(PinnedSubjectRef),
+    rules: Schema.Array(PinnedSubjectRef),
+    configurations: Schema.Array(PinnedSubjectRef),
+});
 //# sourceMappingURL=Derivation.js.map

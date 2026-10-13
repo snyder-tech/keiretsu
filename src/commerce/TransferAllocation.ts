@@ -91,7 +91,9 @@ const checkReversal = (byId: ReadonlyMap<string, TransferAllocation>, allocation
   if (allocation.reversesAllocationId === undefined) return [];
   const target = byId.get(allocation.reversesAllocationId);
   if (target === undefined) return [fault('allocation.reversal-target-unresolved', allocation.id, `allocation ${allocation.reversesAllocationId} is not in the set`, 'warning')];
-  return target.state === 'reversed' ? [] : [fault('allocation.reversal-target-active', allocation.id, 'a replacement points at a reversed allocation')];
+  return target.state === 'reversed'
+    ? []
+    : [fault('allocation.reversal-target-active', allocation.id, `allocation ${allocation.reversesAllocationId} is still active; a replacement may only point at a reversed allocation`)];
 };
 
 const checkEvent = (events: ReadonlyMap<string, LabourEventRef>, allocation: TransferAllocation): ReadonlyArray<ValidationIssue> => {
@@ -123,10 +125,7 @@ const checkConservation = (events: ReadonlyMap<string, LabourEventRef>, active: 
  * @since 0.1.0
  * @category validators
  */
-export const validateAllocations = (options: {
-  readonly allocations: ReadonlyArray<TransferAllocation>;
-  readonly events: ReadonlyArray<LabourEventRef>;
-}): ReadonlyArray<ValidationIssue> => {
+export const validateAllocations = (options: { readonly allocations: ReadonlyArray<TransferAllocation>; readonly events: ReadonlyArray<LabourEventRef> }): ReadonlyArray<ValidationIssue> => {
   const latest = latestAllocations(options.allocations);
   const byId = new Map(latest.map((allocation) => [allocation.id, allocation]));
   const events = new Map(options.events.map((event) => [event.id, event]));

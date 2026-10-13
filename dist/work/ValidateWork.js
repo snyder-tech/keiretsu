@@ -183,6 +183,14 @@ const actingForIssues = (set) => {
             : [];
     });
 };
+const workAuthorityIssues = (set, current) => [
+    ...workOrderIssues({ workOrders: set.workOrders ?? [], chains: set.chains ?? [], authorities: set.authorities ?? [] }),
+    ...acceptanceIssues(set.acceptances ?? [], { events: byId(current), orders: byId(set.workOrders ?? []) }),
+];
+const capacityTradeIssues = (set) => [
+    ...requestIssues(set.requests ?? [], byId(set.offers ?? [])),
+    ...commitmentIssues({ offers: set.offers ?? [], requests: set.requests ?? [], commitments: set.commitments ?? [] }),
+];
 /**
  * Validate a set of work records together.
  *
@@ -207,10 +215,8 @@ export const validateWork = (set) => {
         ...labour.flatMap((event) => labourIssues(event, { proposals, employments })),
         ...journalIssues(journals),
         ...proposalIssues(set.proposals ?? [], byId(journals)),
-        ...workOrderIssues({ workOrders: set.workOrders ?? [], chains: set.chains ?? [], authorities: set.authorities ?? [] }),
-        ...acceptanceIssues(set.acceptances ?? [], { events: byId(current), orders: byId(set.workOrders ?? []) }),
-        ...requestIssues(set.requests ?? [], byId(set.offers ?? [])),
-        ...commitmentIssues({ offers: set.offers ?? [], requests: set.requests ?? [], commitments: set.commitments ?? [] }),
+        ...workAuthorityIssues(set, current),
+        ...capacityTradeIssues(set),
         ...planningIssues(set),
         ...actingForIssues(set),
     ]);

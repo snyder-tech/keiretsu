@@ -129,7 +129,10 @@ const encodeEntry = (codec, entry, index) => {
     const schema = codec.profile[entry.kind];
     if (schema === undefined)
         return Effect.fail(sealFail(`records[${index}]: kind ${entry.kind} has no schema`));
-    return Schema.encodeUnknownEffect(schema)(entry.record).pipe(Effect.mapError((error) => sealFail(`records[${index}]: ${error.message}`)), Effect.flatMap((record) => toJson({ kind: entry.kind, schema: entry.schema, record }, `records[${index}]`)));
+    const schemaId = codec.schemaIds?.[entry.kind];
+    if (schemaId !== undefined && entry.schema !== undefined && entry.schema !== schemaId)
+        return Effect.fail(sealFail(`records[${index}]: schema identity does not match ${schemaId}`));
+    return Schema.encodeUnknownEffect(schema)(entry.record).pipe(Effect.mapError((error) => sealFail(`records[${index}]: ${error.message}`)), Effect.flatMap((record) => toJson({ kind: entry.kind, schema: schemaId ?? entry.schema, record }, `records[${index}]`)));
 };
 /** Round-trip through canonical JSON so only JSON values (no undefined, no class instances) reach the wire. */
 const toJson = (value, at) => canonicalize(value).pipe(Effect.flatMap(parseStrict), Effect.mapError((error) => sealFail(`${at}: ${error.reason}`)));
@@ -172,7 +175,8 @@ export const bindingOf = (envelope) => ({
 });
 /**
  * Add a detached JWS over `contentDigest` to sealed text. The digest does not
- * change: `signature` is excluded from it.
+ * change: `signature` is excluded from it. The digest is recomputed from the
+ * text first, so stale or edited text is refused rather than signed.
  *
  * @since 0.1.0
  * @category producing
@@ -182,6 +186,9 @@ export const signBundle = (options) => Effect.gen(function* () {
     if (!isJsonObject(parsed))
         return yield* Effect.fail(sealFail('a bundle is a JSON object'));
     const envelope = yield* Schema.decodeUnknownEffect(Envelope)(parsed).pipe(Effect.mapError((error) => sealFail(error.message)));
+    const digest = yield* Effect.mapError(digestWire(options.text, DIGEST_EXCLUDED), (error) => sealFail(error.reason));
+    if (digest !== envelope.contentDigest)
+        return yield* Effect.fail(sealFail('contentDigest does not match the text; reseal before signing'));
     const signature = yield* sign({ key: options.key, typ: BUNDLE_TYP, binding: bindingOf(envelope), payload: envelope.contentDigest }).pipe(Effect.mapError((error) => sealFail(error.reason)));
     return yield* Effect.mapError(canonicalize({ ...parsed, signature }), (error) => sealFail(error.reason));
 });
@@ -192,6 +199,9 @@ const classify = (codec, entry, index) => Effect.gen(function* () {
     const schema = Object.hasOwn(codec.profile, entry.kind) ? codec.profile[entry.kind] : undefined;
     if (schema === undefined)
         return { _tag: 'unknown-kind', ...base };
+    const schemaId = codec.schemaIds?.[entry.kind];
+    if (schemaId !== undefined && entry.schema !== schemaId)
+        return { _tag: 'invalid', ...base, code: 'record.schema-mismatch', reason: `schema identity does not match ${schemaId}` };
     return yield* Schema.decodeUnknownEffect(schema)(entry.record).pipe(Effect.match({
         onFailure: (error) => ({ _tag: 'invalid', ...base, reason: error.message }),
         // SAFETY: `record` was decoded with the schema registered for `entry.kind`, so the pair is a RecordOf<P>.

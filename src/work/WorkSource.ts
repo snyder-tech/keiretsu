@@ -10,6 +10,8 @@
  */
 import { Context, Effect, Layer, Schema } from 'effect';
 
+import { compareInstants } from '../core/Temporal.ts';
+
 import type { EconomicEvent } from './EconomicEvent.ts';
 
 /**
@@ -50,12 +52,14 @@ export interface WorkSourceShape {
  */
 export class WorkSource extends Context.Service<WorkSource, WorkSourceShape>()('@snyder-tech/keiretsu/work/WorkSource') {}
 
-const order = (left: EconomicEvent, right: EconomicEvent): number =>
-  left.recordedAt === right.recordedAt ? (left.id < right.id ? -1 : left.id > right.id ? 1 : left.revision - right.revision) : left.recordedAt < right.recordedAt ? -1 : 1;
+const order = (left: EconomicEvent, right: EconomicEvent): number => {
+  const time = compareInstants(left.recordedAt, right.recordedAt);
+  return time === 0 ? (left.id < right.id ? -1 : left.id > right.id ? 1 : left.revision - right.revision) : time;
+};
 
 const parseCursor = (system: string, cursor: string | undefined): Effect.Effect<number, WorkSourceError> => {
   if (cursor === undefined) return Effect.succeed(0);
-  return /^(?:0|[1-9]\d*)$/.test(cursor) ? Effect.succeed(Number(cursor)) : Effect.fail(new WorkSourceError({ system, reason: `invalid cursor ${cursor}` }));
+  return /^(?:0|[1-9]\d*)$/.test(cursor) && Number.isSafeInteger(Number(cursor)) ? Effect.succeed(Number(cursor)) : Effect.fail(new WorkSourceError({ system, reason: `invalid cursor ${cursor}` }));
 };
 
 /**
@@ -66,7 +70,8 @@ const parseCursor = (system: string, cursor: string | undefined): Effect.Effect<
  */
 export const layerInMemory = (options: { readonly system: string; readonly events: ReadonlyArray<EconomicEvent>; readonly pageSize: number }): Layer.Layer<WorkSource> => {
   const sorted = [...options.events].sort(order);
-  const pageSize = Math.max(1, Math.trunc(options.pageSize));
+  if (!Number.isSafeInteger(options.pageSize) || options.pageSize <= 0) throw new RangeError('pageSize must be a positive safe integer');
+  const pageSize = options.pageSize;
   return Layer.succeed(WorkSource, {
     system: options.system,
     fetchSince: (cursor) =>

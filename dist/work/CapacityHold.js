@@ -23,7 +23,7 @@ import { Actor } from "../core/Actor.js";
 import { digestValueSync } from "../core/CanonicalJson.js";
 import { RevisionFields, revisionChain } from "../core/Envelope.js";
 import { AgreementId, EntityId, WorkOrderId } from "../core/Ids.js";
-import { Instant, IsoDate } from "../core/Temporal.js";
+import { compareInstants, Instant, IsoDate } from "../core/Temporal.js";
 import { Effect, Schema } from 'effect';
 import { CapacitySubject } from "./CapacityOffer.js";
 import { OpenCode } from "./Code.js";
@@ -92,8 +92,8 @@ const closingTime = (hold) => {
     if (hold.closedAt === undefined)
         return undefined;
     if (hold.state === 'lapsed')
-        return hold.closedAt >= hold.expiresAt ? undefined : 'a hold lapses only at or after its expiry';
-    return hold.closedAt < hold.expiresAt ? undefined : 'an expired hold lapses; it can no longer be converted or released';
+        return compareInstants(hold.closedAt, hold.expiresAt) >= 0 ? undefined : 'a hold lapses only at or after its expiry';
+    return compareInstants(hold.closedAt, hold.expiresAt) < 0 ? undefined : 'an expired hold lapses; it can no longer be converted or released';
 };
 /**
  * A capacity hold.
@@ -124,7 +124,7 @@ export const CapacityHold = Schema.Struct({
     closedAt: Schema.optional(Instant),
     closedBy: Schema.optional(Actor),
     convertedTo: Schema.optional(WorkOrderId),
-}).check(revisionChain, Schema.makeFilter((hold) => (hold.holder._tag === 'entity' && hold.holder.entityId === hold.provider ? 'a hold reserves another party’s capacity' : undefined)), Schema.makeFilter((hold) => (hold.bookedOn <= hold.window.start ? undefined : 'a hold is booked on or before its window starts')), Schema.makeFilter((hold) => (hold.expiresAt > hold.recordedAt || hold.revision > 1 ? undefined : 'a hold expires after it is recorded')), Schema.makeFilter((hold) => (hold.revision > 1 || hold.state === 'held' ? undefined : 'revision 1 of a hold is held')), Schema.makeFilter(closedFieldsMatchState), Schema.makeFilter(conversionTarget), Schema.makeFilter(closingTime));
+}).check(revisionChain, Schema.makeFilter((hold) => (hold.holder._tag === 'entity' && hold.holder.entityId === hold.provider ? 'a hold reserves another party’s capacity' : undefined)), Schema.makeFilter((hold) => (hold.bookedOn <= hold.window.start ? undefined : 'a hold is booked on or before its window starts')), Schema.makeFilter((hold) => (compareInstants(hold.expiresAt, hold.recordedAt) > 0 || hold.revision > 1 ? undefined : 'a hold expires after it is recorded')), Schema.makeFilter((hold) => (hold.revision > 1 || hold.state === 'held' ? undefined : 'revision 1 of a hold is held')), Schema.makeFilter(closedFieldsMatchState), Schema.makeFilter(conversionTarget), Schema.makeFilter(closingTime));
 /**
  * Whether a hold still reserves capacity.
  *
@@ -171,8 +171,8 @@ const denial = (hold, to, at) => {
     if (!canTransitionCapacityHold(hold.state, to))
         return 'illegal-transition';
     if (to === 'lapsed')
-        return at >= hold.expiresAt ? undefined : 'not-expired';
-    return at < hold.expiresAt ? undefined : 'expired';
+        return compareInstants(at, hold.expiresAt) >= 0 ? undefined : 'not-expired';
+    return compareInstants(at, hold.expiresAt) < 0 ? undefined : 'expired';
 };
 /**
  * Close a hold: the next revision, superseding the digest of the current one.

@@ -24,9 +24,10 @@
 import { convertScaled } from '../fx/Conversion.ts';
 import { Effect, Schema } from 'effect';
 
-import { iso4217, type CurrencyCode, type CurrencyTableShape } from '../core/Currency.ts';
+import { iso4217, minorUnits, type CurrencyCode, type CurrencyTableShape } from '../core/Currency.ts';
 import * as Decimal from '../core/Decimal.ts';
 import * as Money from '../core/Money.ts';
+import * as Exact from '../core/ExactRatio.ts';
 
 import { BillingMode, type BillingModeTag, type CostBaseRef } from './BillingMode.ts';
 import type { LeadTimeClass } from './CapacityTerms.ts';
@@ -304,17 +305,14 @@ const translate = (input: ChargeInput, priced: Priced): Effect.Effect<Money.Mone
 
 const negativeMoney = (money: Money.Money | undefined): boolean => money !== undefined && Money.units(money) < 0n;
 
+const negativeQuantity = (basis: ChargeInput['basis']): boolean =>
+  !Number.isSafeInteger(basis.minutes) || basis.minutes < 0 || (basis.units !== undefined && basis.units.startsWith('-')) || (basis.rate !== undefined && basis.rate.rate.startsWith('-'));
+const negativeMoneyAmounts = (basis: ChargeInput['basis']): boolean =>
+  negativeMoney(basis.cost?.markupBase) || negativeMoney(basis.cost?.passThrough) || negativeMoney(basis.revenue) || negativeMoney(basis.disbursement);
+
 const rejectNegative = (input: ChargeInput): Effect.Effect<void, ChargeComputationError> => {
   const basis = input.basis;
-  const negative =
-    !Number.isSafeInteger(basis.minutes) ||
-    basis.minutes < 0 ||
-    (basis.units !== undefined && basis.units.startsWith('-')) ||
-    (basis.rate !== undefined && basis.rate.rate.startsWith('-')) ||
-    negativeMoney(basis.cost?.markupBase) ||
-    negativeMoney(basis.cost?.passThrough) ||
-    negativeMoney(basis.revenue) ||
-    negativeMoney(basis.disbursement);
+  const negative = negativeQuantity(basis) || negativeMoneyAmounts(basis);
   return negative ? fail(input, 'charge.negative-input', 'minutes, units, rates, cost, revenue and disbursements are non-negative; credits are separate charge lines') : Effect.void;
 };
 
@@ -365,3 +363,98 @@ export const computeCharge = (input: ChargeInput): Effect.Effect<ChargeComputati
       disposition: dispositionOf(input.leg),
     };
   });
+
+/**
+ * New exact computation profile. The priced amount is an exact fraction;
+ * provider and invoice totals each round once at their minor-unit boundary.
+ * Historical computeCharge retains its frozen Decimal scale semantics.
+ * @since 0.44.12 @category models
+ */
+export interface ExactUnitPriceChargeComputation extends Omit<ChargeComputation, 'priced'> {
+  readonly computationProfile: 'exact-unit-price/1';
+  readonly priced: { readonly amount: Exact.ExactRatio; readonly currency: CurrencyCode };
+}
+
+const ratioMoney = (input: ChargeInput, amount: Exact.ExactRatio, currency: CurrencyCode): Effect.Effect<Money.Money, ChargeComputationError> =>
+  Effect.gen(function* () {
+    const digits = yield* minorUnits(tableOf(input), currency).pipe(
+      Effect.mapError((error) => new ChargeComputationError({ legId: input.leg.id, code: 'charge.unknown-currency', reason: `${error.code} is not in ${error.edition}` })),
+    );
+    const units = yield* Exact.toUnits(amount, { digits, rounding: input.leg.rounding }).pipe(Effect.mapError((error) => exactFault(input, error)));
+    return Money.make(units, currency);
+  });
+
+const exactFault = (input: ChargeInput, error: Exact.ExactRatioError): ChargeComputationError =>
+  new ChargeComputationError({ legId: input.leg.id, code: `charge.exact.${error.code}`, reason: `exact arithmetic failed in ${error.operation}` });
+
+const exactFxProduct = (snapshot: FxSnapshotRef): Effect.Effect<Exact.ExactRatio, Exact.ExactRatioError> =>
+  Effect.reduce(
+    snapshot.legs,
+    () => Exact.ONE,
+    (product, leg) =>
+      Effect.gen(function* () {
+        if (!Number.isSafeInteger(leg.unit) || leg.unit <= 0 || (leg.orientation !== 'multiply' && leg.orientation !== 'divide'))
+          return yield* Effect.fail(new Exact.ExactRatioError({ code: 'invalid-input', operation: 'FX leg' }));
+        const rate = yield* Exact.fromDecimal(leg.rate);
+        if (BigInt(rate.numerator) <= 0n) return yield* Effect.fail(new Exact.ExactRatioError({ code: 'invalid-input', operation: 'FX rate' }));
+        const unit = yield* Exact.fromParts(BigInt(leg.unit), 1n);
+        const perUnit = yield* Exact.divide(rate, unit);
+        const oriented = leg.orientation === 'multiply' ? perUnit : yield* Exact.inverse(perUnit);
+        return yield* Exact.multiply(product, oriented);
+      }),
+  );
+
+/**
+ * Compute a unit-price charge without intermediate Decimal rounding. Exact
+ * product, discount and FX remain rational. Other billing modes fail explicitly.
+ * @since 0.44.12 @category computation
+ */
+export const computeExactUnitPriceCharge = Effect.fnUntraced(function* (input: ChargeInput): Effect.fn.Return<ExactUnitPriceChargeComputation, ChargeComputationError> {
+  yield* rejectNegative(input);
+  const mode = input.leg.billingMode;
+  if (mode._tag !== 'unit-price') return yield* fail(input, 'charge.exact.billing-mode', 'the exact unit-price profile requires a unit-price leg');
+  if (mode.unitPrice.startsWith('-')) return yield* fail(input, 'charge.negative-input', 'unit price is non-negative; credits are separate charge lines');
+  const units = yield* need(input, input.basis.units, 'charge.units-missing', 'accepted units are required');
+  const program = Effect.gen(function* () {
+    const quantity = yield* Exact.fromDecimal(units);
+    const unitPrice = yield* Exact.fromDecimal(mode.unitPrice);
+    let priced = yield* Exact.multiply(quantity, unitPrice);
+    const discount = discountingClass(input.basis);
+    if (discount !== undefined) {
+      if (!Number.isSafeInteger(discount.discountBps) || discount.discountBps < 0 || discount.discountBps > 10_000)
+        return yield* Effect.fail(new Exact.ExactRatioError({ code: 'invalid-input', operation: 'lead-time discount' }));
+      priced = yield* Exact.multiply(priced, yield* Exact.fromParts(BigInt(10_000 - discount.discountBps), 10_000n));
+    }
+    return { priced, discount };
+  });
+  const { priced, discount } = yield* program.pipe(Effect.mapError((error) => exactFault(input, error)));
+  const providerAmount = yield* ratioMoney(input, priced, mode.currency);
+  const target = input.leg.invoiceCurrency;
+  let translated = priced;
+  const fx = mode.currency === target ? undefined : input.basis.fx;
+  if (mode.currency !== target) {
+    if (fx === undefined) return yield* fail(input, 'charge.compute.fx-missing', `an FX snapshot is required to translate ${mode.currency} to ${target}`);
+    const forward = fx.base === mode.currency && fx.quote === target;
+    const reverse = fx.quote === mode.currency && fx.base === target;
+    if (!forward && !reverse) return yield* fail(input, 'charge.compute.fx-pair-mismatch', `snapshot ${fx.base}/${fx.quote} cannot translate ${mode.currency} to ${target}`);
+    const conversion = Effect.gen(function* () {
+      const product = yield* exactFxProduct(fx);
+      return yield* Exact.multiply(priced, forward ? product : yield* Exact.inverse(product));
+    });
+    translated = yield* conversion.pipe(Effect.mapError((error) => exactFault(input, error)));
+  }
+  const amount = yield* ratioMoney(input, translated, target);
+  return {
+    computationProfile: 'exact-unit-price/1',
+    legId: input.leg.id,
+    billingModeTag: 'unit-price',
+    quantity: units,
+    unit: 'value-unit',
+    priced: { amount: priced, currency: mode.currency },
+    providerAmount,
+    amount,
+    ...(fx === undefined ? {} : { fx }),
+    ...(discount === undefined ? {} : { leadTimeDiscount: { classKey: discount.key, discountBps: discount.discountBps } }),
+    disposition: dispositionOf(input.leg),
+  };
+});

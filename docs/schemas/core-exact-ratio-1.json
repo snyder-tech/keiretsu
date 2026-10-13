@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:core:exact-ratio:1",
+  "type": "object",
+  "properties": {
+    "numerator": {
+      "type": "string",
+      "pattern": "^(?:0|-?[1-9][0-9]*)(?![\\s\\S])"
+    },
+    "denominator": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*(?![\\s\\S])"
+    }
+  },
+  "required": [
+    "numerator",
+    "denominator"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "ratio.canonical-integers",
+    "ratio.components-at-most-256-digits",
+    "ratio.reduced-positive-denominator"
+  ]
+}

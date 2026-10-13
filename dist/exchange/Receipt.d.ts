@@ -1,5 +1,6 @@
 import { ValidationIssue } from '../core/Issue.ts';
 import { Effect, Schema } from 'effect';
+import type { Envelope } from './Bundle.ts';
 import { type SigningKey } from './Jws.ts';
 /**
  * Coded reason for a rejection (issue codes from the invariant catalogue).
@@ -186,7 +187,9 @@ export declare const sealReceipt: (receipt: UnsealedReceipt) => Effect.Effect<{
  */
 export declare const readReceipt: (text: string) => Effect.Effect<BundleReceipt, ReceiptError>;
 /**
- * Sign sealed receipt text as the receiver (`typ` {@link RECEIPT_TYP}).
+ * Sign sealed receipt text as the receiver (`typ` {@link RECEIPT_TYP}). The
+ * receipt digest is recomputed from the text first, so stale or edited text is
+ * refused rather than signed.
  *
  * @since 0.1.0
  * @category producing
@@ -196,16 +199,23 @@ export declare const signReceipt: (options: {
     readonly key: SigningKey;
 }) => Effect.Effect<string, ReceiptError>;
 /**
- * Sender-side check of a receipt: digest over the received text, optional
- * required signature (resolved for the receiver's party key), and that it
- * acknowledges the digest the sender sent.
+ * Original sent envelope context required to verify an acknowledgment.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export type ReceiptExpectation = Pick<Envelope, 'issuer' | 'audience' | 'bundleId' | 'seq' | 'specVersion' | 'contentDigest'>;
+/**
+ * Check a receipt's raw-wire digest, original sent envelope context and signature
+ * using the expected audience's key. The outcome still determines acceptance;
+ * context and signature verification do not prove business application.
  *
  * @since 0.1.0
  * @category verification
  */
 export declare const verifyReceipt: (options: {
     readonly text: string;
-    readonly sentDigest: string;
+    readonly expected: ReceiptExpectation;
     readonly requireSignature: boolean;
 }) => Effect.Effect<ReadonlyArray<ValidationIssue>, ReceiptError>;
 export {};

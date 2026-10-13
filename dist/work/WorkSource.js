@@ -9,6 +9,7 @@
  * @module
  */
 import { Context, Effect, Layer, Schema } from 'effect';
+import { compareInstants } from "../core/Temporal.js";
 /**
  * A source system could not be read or a record could not be mapped.
  *
@@ -25,11 +26,14 @@ export class WorkSourceError extends Schema.TaggedError()('WorkSourceError', { s
  */
 export class WorkSource extends Context.Service()('@snyder-tech/keiretsu/work/WorkSource') {
 }
-const order = (left, right) => left.recordedAt === right.recordedAt ? (left.id < right.id ? -1 : left.id > right.id ? 1 : left.revision - right.revision) : left.recordedAt < right.recordedAt ? -1 : 1;
+const order = (left, right) => {
+    const time = compareInstants(left.recordedAt, right.recordedAt);
+    return time === 0 ? (left.id < right.id ? -1 : left.id > right.id ? 1 : left.revision - right.revision) : time;
+};
 const parseCursor = (system, cursor) => {
     if (cursor === undefined)
         return Effect.succeed(0);
-    return /^(?:0|[1-9]\d*)$/.test(cursor) ? Effect.succeed(Number(cursor)) : Effect.fail(new WorkSourceError({ system, reason: `invalid cursor ${cursor}` }));
+    return /^(?:0|[1-9]\d*)$/.test(cursor) && Number.isSafeInteger(Number(cursor)) ? Effect.succeed(Number(cursor)) : Effect.fail(new WorkSourceError({ system, reason: `invalid cursor ${cursor}` }));
 };
 /**
  * An in-memory source for tests: events ordered by recorded time, paged by position.
@@ -39,7 +43,9 @@ const parseCursor = (system, cursor) => {
  */
 export const layerInMemory = (options) => {
     const sorted = [...options.events].sort(order);
-    const pageSize = Math.max(1, Math.trunc(options.pageSize));
+    if (!Number.isSafeInteger(options.pageSize) || options.pageSize <= 0)
+        throw new RangeError('pageSize must be a positive safe integer');
+    const pageSize = options.pageSize;
     return Layer.succeed(WorkSource, {
         system: options.system,
         fetchSince: (cursor) => Effect.map(parseCursor(options.system, cursor), (start) => {

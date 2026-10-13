@@ -33,7 +33,7 @@ Dependencies run one way: `core ← entity ← {fx, work} ← commerce ← finan
 ## Example
 
 ```ts
-import { Effect } from 'effect';
+import { Effect, Schema } from 'effect';
 import * as Currency from '@snyder-tech/keiretsu/core/Currency';
 import * as Decimal from '@snyder-tech/keiretsu/core/Decimal';
 import * as Money from '@snyder-tech/keiretsu/core/Money';
@@ -41,7 +41,7 @@ import * as Money from '@snyder-tech/keiretsu/core/Money';
 // Cost-plus 15% on a PKR cost base, rounded once to minor units
 const fee = Money.fromDecimal({
   amount: Decimal.fromScaled(Decimal.multiply(Decimal.toScaled('2000000'), Decimal.toScaled('1.15'))),
-  currency: 'PKR' as Currency.CurrencyCode,
+  currency: Schema.decodeSync(Currency.CurrencyCode)('PKR'),
   table: Currency.iso4217,
   rounding: 'half-away-from-zero',
 });

@@ -1,0 +1,1 @@
+{"version":3,"file":"ScanObservation.d.ts","sourceRoot":"","sources":["../../src/admission/ScanObservation.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,MAAM,QAAQ,CAAC;AAOhC,eAAO,MAAM,iBAAiB,2DAAsC,CAAC;AACrE,6EAA6E;AAC7E,eAAO,MAAM,eAAe;;;;;;;;;;;;;;;;;;EAU1B,CAAC;AACH,MAAM,MAAM,eAAe,GAAG,OAAO,eAAe,CAAC,IAAI,CAAC;AAC1D,MAAM,MAAM,sBAAsB,GAAG,OAAO,eAAe,CAAC,OAAO,CAAC"}

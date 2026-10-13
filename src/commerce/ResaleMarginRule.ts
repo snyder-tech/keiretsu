@@ -93,6 +93,17 @@ export type ResaleMarginRule = typeof ResaleMarginRule.Type;
 export type ResaleResolution = { readonly _tag: 'priced'; readonly price: Money.Money } | { readonly _tag: 'hold'; readonly reasonCode: string; readonly message: string };
 
 const hold = (reasonCode: string, message: string): ResaleResolution => ({ _tag: 'hold', reasonCode, message });
+const requiredResaleInputs = (margin: ResaleMarginRule, cost: Money.Money | undefined, list: Money.Money | undefined): ResaleResolution | undefined => {
+  if (margin.method._tag !== 'discount-off-list' && cost === undefined) return hold('resale.cost-missing', 'upstream cost evidence is required');
+  if (margin.method._tag !== 'markup-over-cost' && list === undefined) return hold('resale.list-missing', 'the upstream list price is required');
+  return undefined;
+};
+const resaleAmountHold = (cost: Money.Money | undefined, list: Money.Money | undefined): ResaleResolution | undefined => {
+  if (cost !== undefined && list !== undefined && cost.currency !== list.currency) return hold('resale.currency-mismatch', 'cost and list share a currency');
+  if (cost !== undefined && list !== undefined && Money.units(list) < Money.units(cost)) return hold('resale.negative-margin', 'list is below cost; a person decides');
+  return undefined;
+};
+
 const ONE = Decimal.fromInteger(1);
 const bps = (value: number): Decimal.Scaled => Decimal.fromUnits(BigInt(value), 4);
 
@@ -111,11 +122,12 @@ export const resalePrice = (
   if (margin.status !== 'active' || margin.revenueRole === 'undetermined') return hold('resale.not-active', 'the rule is not active with a decided revenue role');
   const table = inputs.table ?? iso4217;
   const { cost, list } = inputs;
-  if (margin.method._tag !== 'discount-off-list' && cost === undefined) return hold('resale.cost-missing', 'upstream cost evidence is required');
-  if (margin.method._tag !== 'markup-over-cost' && list === undefined) return hold('resale.list-missing', 'the upstream list price is required');
+  const requiredHold = requiredResaleInputs(margin, cost, list);
+  if (requiredHold !== undefined) return requiredHold;
   const currency = (cost ?? list)?.currency;
-  if (currency === undefined || (cost !== undefined && list !== undefined && cost.currency !== list.currency)) return hold('resale.currency-mismatch', 'cost and list share a currency');
-  if (cost !== undefined && list !== undefined && Money.units(list) < Money.units(cost)) return hold('resale.negative-margin', 'list is below cost; a person decides');
+  if (currency === undefined) return hold('resale.currency-mismatch', 'cost and list share a currency');
+  const amountHold = resaleAmountHold(cost, list);
+  if (amountHold !== undefined) return amountHold;
   const scaled = (money: Money.Money | undefined) => (money === undefined ? Effect.succeed(Decimal.fromInteger(0)) : Money.toScaledAmount(money, table));
   const program = Effect.gen(function* () {
     const costValue = yield* scaled(cost);

@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keiretsu:schema:mapping:definition:1",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceConfiguration": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "configurationDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "product",
+        "version",
+        "modules",
+        "configurationDigest"
+      ],
+      "additionalProperties": false
+    },
+    "sourceModel": {
+      "type": "string",
+      "minLength": 1
+    },
+    "targetNamespace": {
+      "type": "string",
+      "minLength": 1
+    },
+    "targetKind": {
+      "type": "string",
+      "enum": [
+        "company",
+        "legal-entity",
+        "person",
+        "engagement",
+        "service",
+        "work-order",
+        "service-line",
+        "activity",
+        "time-entry",
+        "economic-event",
+        "billing-account",
+        "subscription",
+        "company-group",
+        "invoice",
+        "cost-object",
+        "counterparty",
+        "project",
+        "brand",
+        "tax-group",
+        "work-item",
+        "work-request",
+        "service-case",
+        "work-observation",
+        "work-container"
+      ]
+    },
+    "targetSchemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "source-to-canonical",
+        "canonical-to-source"
+      ]
+    },
+    "fields": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "object",
+          "properties": {
+            "sourceField": {
+              "type": "string",
+              "minLength": 1
+            },
+            "targetField": {
+              "type": "string",
+              "minLength": 1
+            },
+            "transform": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "_tag": {
+                      "type": "string",
+                      "enum": [
+                        "copy"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "_tag"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "_tag": {
+                      "type": "string",
+                      "enum": [
+                        "trim-string"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "_tag"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "_tag": {
+                      "type": "string",
+                      "enum": [
+                        "lookup"
+                      ]
+                    },
+                    "values": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "_tag",
+                    "values"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "missing": {
+              "type": "string",
+              "enum": [
+                "preserve",
+                "unresolved"
+              ]
+            },
+            "loss": {
+              "type": "string",
+              "enum": [
+                "reject",
+                "report"
+              ]
+            }
+          },
+          "required": [
+            "sourceField",
+            "targetField",
+            "transform",
+            "missing",
+            "loss"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "sourceField": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetField": {
+            "type": "string",
+            "minLength": 1
+          },
+          "transform": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "_tag": {
+                    "type": "string",
+                    "enum": [
+                      "copy"
+                    ]
+                  }
+                },
+                "required": [
+                  "_tag"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_tag": {
+                    "type": "string",
+                    "enum": [
+                      "trim-string"
+                    ]
+                  }
+                },
+                "required": [
+                  "_tag"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_tag": {
+                    "type": "string",
+                    "enum": [
+                      "lookup"
+                    ]
+                  },
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "_tag",
+                  "values"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "missing": {
+            "type": "string",
+            "enum": [
+              "preserve",
+              "unresolved"
+            ]
+          },
+          "loss": {
+            "type": "string",
+            "enum": [
+              "reject",
+              "report"
+            ]
+          }
+        },
+        "required": [
+          "sourceField",
+          "targetField",
+          "transform",
+          "missing",
+          "loss"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "sourceConfiguration",
+    "sourceModel",
+    "targetNamespace",
+    "targetKind",
+    "targetSchemaVersion",
+    "direction",
+    "fields"
+  ],
+  "additionalProperties": false,
+  "$defs": {},
+  "x-keiretsu-semantic-rules": [
+    "mapping.direction-explicit",
+    "mapping.target-field-unique"
+  ]
+}

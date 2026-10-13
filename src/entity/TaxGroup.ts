@@ -52,14 +52,24 @@ export const SCREEN_THRESHOLD_BPS: Readonly<Partial<Record<TaxGroupKind, number>
   'us-41f-single-taxpayer': 5001,
 };
 
-const heldBy = (edges: ReadonlyArray<OwnershipEdge>, holders: ReadonlySet<string>, owned: string): number =>
-  edges.filter((edge) => edge.owned === owned && holders.has(edge.owner)).reduce((total, edge) => total + Math.max(edge.shareBps, edge.votingBps ?? 0), 0);
+/**
+ * Whether `holders` together reach the threshold in `owned` by value or by voting power. The two
+ * are summed separately (§1563(a) "voting power ... or ... value"): 60% of the value through one
+ * holder and 60% of the votes through another is neither 80% of the value nor 80% of the votes.
+ * An edge without `votingBps` carries votes in proportion to its share.
+ */
+const reaches = (edges: ReadonlyArray<OwnershipEdge>, holders: ReadonlySet<string>, owned: string, thresholdBps: number): boolean => {
+  const held = edges.filter((edge) => edge.owned === owned && holders.has(edge.owner));
+  const value = held.reduce((total, edge) => total + edge.shareBps, 0);
+  const voting = held.reduce((total, edge) => total + (edge.votingBps ?? edge.shareBps), 0);
+  return value >= thresholdBps || voting >= thresholdBps;
+};
 
 const closure = (options: { readonly root: string; readonly members: ReadonlyArray<string>; readonly edges: ReadonlyArray<OwnershipEdge>; readonly thresholdBps: number }): ReadonlySet<string> => {
   const covered = new Set([options.root]);
   let grew = true;
   while (grew) {
-    const next = options.members.filter((member) => !covered.has(member) && heldBy(options.edges, covered, member) >= options.thresholdBps);
+    const next = options.members.filter((member) => !covered.has(member) && reaches(options.edges, covered, member, options.thresholdBps));
     next.forEach((member) => covered.add(member));
     grew = next.length > 0;
   }

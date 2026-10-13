@@ -7,7 +7,7 @@
  * digest the receiver actually computed, every record outcome and the
  * receiver's period. It has its own digest (`receiptDigest`, same JCS rule as
  * bundles) and may carry a detached JWS by the receiver, so a sender stops
- * retrying only on a receipt whose `contentDigest` matches what it sent.
+ * authenticate acknowledgment against the original sent envelope context.
  *
  * @since 0.1.0
  * @module
@@ -46,7 +46,7 @@ export const RecordReceipt = Schema.Struct({
     outcome: RecordOutcome,
     receiverPeriod: Schema.optional(Period),
     reasons: Schema.optional(Schema.NonEmptyArray(Reason)),
-}).check(Schema.makeFilter((receipt) => (receipt.outcome === 'rejected' && receipt.reasons === undefined ? 'a rejection states its reasons (receipt.rejection-reason)' : undefined)), Schema.makeFilter((receipt) => (receipt.outcome === 'accepted-in-period' && receipt.receiverPeriod === undefined ? 'accepted-in-period names the receiver period (receipt.receiver-period)' : undefined)));
+}).check(Schema.makeFilter((receipt) => (receipt.outcome === 'rejected' && receipt.reasons === undefined ? 'a rejection states its reasons (receipt.rejection-reason)' : undefined)), Schema.makeFilter((receipt) => receipt.outcome === 'accepted-in-period' && receipt.receiverPeriod === undefined ? 'accepted-in-period names the receiver period (receipt.receiver-period)' : undefined));
 /** @since 0.1.0 @category schemas */
 export const BundleOutcome = Schema.Literals(['accepted', 'partial', 'rejected', 'duplicate']);
 const receiptFields = {
@@ -145,20 +145,42 @@ const parseReceipt = (text) => Effect.gen(function* () {
  */
 export const readReceipt = (text) => Effect.map(parseReceipt(text), ({ receipt }) => receipt);
 /**
- * Sign sealed receipt text as the receiver (`typ` {@link RECEIPT_TYP}).
+ * Sign sealed receipt text as the receiver (`typ` {@link RECEIPT_TYP}). The
+ * receipt digest is recomputed from the text first, so stale or edited text is
+ * refused rather than signed.
  *
  * @since 0.1.0
  * @category producing
  */
 export const signReceipt = (options) => Effect.gen(function* () {
     const { parsed, receipt } = yield* parseReceipt(options.text);
+    const digest = yield* Effect.mapError(digestWire(options.text, RECEIPT_DIGEST_EXCLUDED), (error) => receiptFail(error.reason));
+    if (digest !== receipt.receiptDigest)
+        return yield* Effect.fail(receiptFail('receiptDigest does not match the text; reseal before signing'));
     const signature = yield* sign({ key: options.key, typ: RECEIPT_TYP, binding: receiptBinding(receipt), payload: receipt.receiptDigest }).pipe(Effect.mapError((error) => receiptFail(error.reason)));
     return yield* Effect.mapError(canonicalize({ ...parsed, signature }), (error) => receiptFail(error.reason));
 });
+const contextIssues = (receipt, expected) => {
+    const at = expected.bundleId;
+    const found = [];
+    if (receipt.issuer.toLowerCase() !== expected.issuer.toLowerCase())
+        found.push(issue('receipt.issuer-mismatch', 'error', at, 'the receipt identifies a different issuer'));
+    if (partyKey(receipt.receiver) !== partyKey(expected.audience))
+        found.push(issue('receipt.receiver-mismatch', 'error', at, 'the receipt identifies a different receiver'));
+    if (receipt.bundleId.toLowerCase() !== expected.bundleId.toLowerCase())
+        found.push(issue('receipt.bundle-mismatch', 'error', at, 'the receipt identifies a different bundle'));
+    if (receipt.seq !== expected.seq)
+        found.push(issue('receipt.sequence-mismatch', 'error', at, 'the receipt acknowledges a different sequence'));
+    if (receipt.specVersion !== expected.specVersion)
+        found.push(issue('receipt.version-mismatch', 'error', at, 'the receipt acknowledges a different specification version'));
+    if (receipt.contentDigest !== expected.contentDigest)
+        found.push(issue('receipt.content-mismatch', 'error', at, 'the receipt acknowledges different content than was sent'));
+    return found;
+};
 /**
- * Sender-side check of a receipt: digest over the received text, optional
- * required signature (resolved for the receiver's party key), and that it
- * acknowledges the digest the sender sent.
+ * Check a receipt's raw-wire digest, original sent envelope context and signature
+ * using the expected audience's key. The outcome still determines acceptance;
+ * context and signature verification do not prove business application.
  *
  * @since 0.1.0
  * @category verification
@@ -166,12 +188,10 @@ export const signReceipt = (options) => Effect.gen(function* () {
 export const verifyReceipt = (options) => Effect.gen(function* () {
     const { receipt } = yield* parseReceipt(options.text);
     const digest = yield* Effect.mapError(digestWire(options.text, RECEIPT_DIGEST_EXCLUDED), (error) => receiptFail(error.reason));
-    const at = receipt.bundleId;
-    const found = [];
+    const at = options.expected.bundleId;
+    const found = [...contextIssues(receipt, options.expected)];
     if (digest !== receipt.receiptDigest)
         found.push(issue('receipt.digest-mismatch', 'error', at, 'receiptDigest does not match the received receipt'));
-    if (receipt.contentDigest !== options.sentDigest)
-        found.push(issue('receipt.content-mismatch', 'error', at, 'the receipt acknowledges different content than was sent'));
     if (receipt.signature === undefined) {
         if (options.requireSignature)
             found.push(issue('receipt.signature-required', 'error', at, 'the receipt must be signed by the receiver'));
@@ -181,9 +201,9 @@ export const verifyReceipt = (options) => Effect.gen(function* () {
     if (Option.isNone(resolver))
         return [...found, issue('receipt.signature-unverifiable', 'error', at, 'the receipt is signed but no key resolver is configured')];
     const signatureIssues = yield* verify(receipt.signature, {
-        signer: partyKey(receipt.receiver),
+        signer: partyKey(options.expected.audience),
         typ: RECEIPT_TYP,
-        binding: receiptBinding(receipt),
+        binding: receiptBinding({ ...options.expected, receiver: options.expected.audience }),
         payload: receipt.receiptDigest,
         subject: at,
     }).pipe(Effect.provideService(KeyResolver, resolver.value));

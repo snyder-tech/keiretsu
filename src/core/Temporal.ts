@@ -30,13 +30,19 @@ export const IsoDate = Schema.String.check(
 /** @since 0.1.0 @category models */
 export type IsoDate = typeof IsoDate.Type;
 
+/** UTC instant spelling with bounded time and fraction fields. @since 0.44.12 @category patterns */
+export const INSTANT_PATTERN: RegExp = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,9})?Z$/;
+
 /**
  * RFC 3339 UTC instant with `Z` offset.
  *
  * @since 0.1.0
  * @category schemas
  */
-export const Instant = Schema.String.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/)).pipe(Schema.brand('keiretsu/Instant'));
+export const Instant = Schema.String.check(
+  Schema.isPattern(INSTANT_PATTERN),
+  Schema.makeFilter((value: string) => (isCalendarDate(value.slice(0, 10)) ? undefined : 'instant must name a Gregorian calendar date')),
+).pipe(Schema.brand('keiretsu/Instant'));
 /** @since 0.1.0 @category models */
 export type Instant = typeof Instant.Type;
 
@@ -78,10 +84,8 @@ export const contains = (interval: { readonly validFrom: string; readonly validT
  * @since 0.1.0
  * @category predicates
  */
-export const overlaps = (
-  left: { readonly validFrom: string; readonly validTo?: string | undefined },
-  right: { readonly validFrom: string; readonly validTo?: string | undefined },
-): boolean => (left.validTo === undefined || right.validFrom < left.validTo) && (right.validTo === undefined || left.validFrom < right.validTo);
+export const overlaps = (left: { readonly validFrom: string; readonly validTo?: string | undefined }, right: { readonly validFrom: string; readonly validTo?: string | undefined }): boolean =>
+  (left.validTo === undefined || right.validFrom < left.validTo) && (right.validTo === undefined || left.validFrom < right.validTo);
 
 /**
  * Bitemporal stamp: when the fact is true (valid time) and when this system
@@ -94,7 +98,7 @@ export const Bitemporal = Schema.Struct({
   validFrom: IsoDate,
   validTo: Schema.optional(IsoDate),
   recordedAt: Instant,
-});
+}).check(Schema.makeFilter((stamp) => (stamp.validTo === undefined || stamp.validFrom < stamp.validTo ? undefined : 'validTo must follow validFrom')));
 /** @since 0.1.0 @category models */
 export type Bitemporal = typeof Bitemporal.Type;
 
@@ -105,3 +109,23 @@ export type Bitemporal = typeof Bitemporal.Type;
  * @category constructors
  */
 export const periodOf = (date: IsoDate): Period => Schema.decodeSync(Period)(date.slice(0, 7));
+
+/**
+ * Nanoseconds since the Unix epoch. UTC seconds are 00–59; leap-second text
+ * is rejected. Received fraction spelling is preserved by the Instant codec.
+ * Throws a schema error on invalid text, including impossible calendar dates.
+ * @since 0.44.12 @category conversions
+ */
+export const toEpochNanoseconds = (value: Instant | string): bigint => {
+  const instant = Schema.decodeSync(Instant)(value);
+  const seconds = BigInt(Date.parse(`${instant.slice(0, 19)}Z`)) / 1000n;
+  const fraction = instant.slice(19, -1);
+  return seconds * 1_000_000_000n + BigInt(fraction === '' ? '0' : fraction.slice(1).padEnd(9, '0'));
+};
+
+/** Compare instants by time, independent of fractional spelling. @since 0.44.12 @category ordering */
+export const compareInstants = (left: Instant | string, right: Instant | string): -1 | 0 | 1 => {
+  const a = toEpochNanoseconds(left);
+  const b = toEpochNanoseconds(right);
+  return a < b ? -1 : a > b ? 1 : 0;
+};

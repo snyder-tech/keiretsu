@@ -25,6 +25,14 @@ export declare const CostObject: Schema.TaggedUnion<{
         readonly name: Schema.NonEmptyString;
         readonly parent: Schema.optional<Schema.brand<Schema.String, "keiretsu/CostObjectId">>;
     }>;
+    readonly capability: Schema.TaggedStruct<"capability", {
+        readonly offeringId: Schema.optional<Schema.brand<Schema.String, "keiretsu/OfferingId">>;
+        readonly capabilityVersion: Schema.optional<Schema.NonEmptyString>;
+        readonly id: Schema.brand<Schema.String, "keiretsu/CostObjectId">;
+        readonly entityId: Schema.brand<Schema.String, "keiretsu/EntityId">;
+        readonly name: Schema.NonEmptyString;
+        readonly parent: Schema.optional<Schema.brand<Schema.String, "keiretsu/CostObjectId">>;
+    }>;
     readonly project: Schema.TaggedStruct<"project", {
         readonly id: Schema.brand<Schema.String, "keiretsu/CostObjectId">;
         readonly entityId: Schema.brand<Schema.String, "keiretsu/EntityId">;
@@ -33,14 +41,6 @@ export declare const CostObject: Schema.TaggedUnion<{
     }>;
     readonly "work-order": Schema.TaggedStruct<"work-order", {
         readonly workOrderId: Schema.brand<Schema.String, "keiretsu/WorkOrderId">;
-        readonly id: Schema.brand<Schema.String, "keiretsu/CostObjectId">;
-        readonly entityId: Schema.brand<Schema.String, "keiretsu/EntityId">;
-        readonly name: Schema.NonEmptyString;
-        readonly parent: Schema.optional<Schema.brand<Schema.String, "keiretsu/CostObjectId">>;
-    }>;
-    readonly capability: Schema.TaggedStruct<"capability", {
-        readonly offeringId: Schema.optional<Schema.brand<Schema.String, "keiretsu/OfferingId">>;
-        readonly capabilityVersion: Schema.optional<Schema.NonEmptyString>;
         readonly id: Schema.brand<Schema.String, "keiretsu/CostObjectId">;
         readonly entityId: Schema.brand<Schema.String, "keiretsu/EntityId">;
         readonly name: Schema.NonEmptyString;

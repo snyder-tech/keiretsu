@@ -70,7 +70,15 @@ export const fromScaled = (value) => {
     return (negative && text !== '0' ? `-${text}` : text);
 };
 /** @since 0.1.0 @category math */
-export const fromInteger = (value) => asScaled(BigInt(value) * SCALE);
+export const fromInteger = (value) => {
+    if (typeof value === 'number' && !Number.isSafeInteger(value))
+        throw new RangeError('fromInteger requires a safe integer number or bigint');
+    return asScaled(BigInt(value) * SCALE);
+};
+const checkDigits = (digits) => {
+    if (!Number.isInteger(digits) || digits < 0 || digits > SCALE_DIGITS)
+        throw new RangeError(`digits must be an integer from 0 to ${SCALE_DIGITS}`);
+};
 /** @since 0.1.0 @category math */
 export const add = (left, right) => asScaled(left + right);
 /** @since 0.1.0 @category math */
@@ -96,6 +104,7 @@ export const divideBy = (numerator, denominator) => {
  * @category math
  */
 export const round = (value, digits, mode) => {
+    checkDigits(digits);
     const step = 10n ** BigInt(SCALE_DIGITS - digits);
     return asScaled(divide(value, step, mode) * step);
 };
@@ -105,12 +114,18 @@ export const round = (value, digits, mode) => {
  * @since 0.1.0
  * @category conversions
  */
-export const toUnits = (value, digits, mode) => divide(value, 10n ** BigInt(SCALE_DIGITS - digits), mode);
+export const toUnits = (value, digits, mode) => {
+    checkDigits(digits);
+    return divide(value, 10n ** BigInt(SCALE_DIGITS - digits), mode);
+};
 /**
  * The fixed-point value of an integer count of `10^-digits` units.
  *
  * @since 0.1.0
  * @category conversions
  */
-export const fromUnits = (units, digits) => asScaled(units * 10n ** BigInt(SCALE_DIGITS - digits));
+export const fromUnits = (units, digits) => {
+    checkDigits(digits);
+    return asScaled(units * 10n ** BigInt(SCALE_DIGITS - digits));
+};
 //# sourceMappingURL=Decimal.js.map

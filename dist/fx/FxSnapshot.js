@@ -57,18 +57,23 @@ export const RateLeg = Schema.Struct({
 export const FallbackReason = Schema.Literals(['non-publication-day', 'not-observed', 'outside-calendar']);
 const legFrom = (leg) => (leg.orientation === 'multiply' ? leg.base : leg.quote);
 const legTo = (leg) => (leg.orientation === 'multiply' ? leg.quote : leg.base);
+const directChainIssue = (snapshot, first) => {
+    return snapshot.legs.length === 1 && legFrom(first) === snapshot.base && legTo(first) === snapshot.quote ? undefined : 'a direct snapshot has one leg from base to quote';
+};
+const triangulatedChainIssue = (snapshot, first, second) => {
+    return legFrom(first) === snapshot.base && legTo(first) === snapshot.pivot && legFrom(second) === snapshot.pivot && legTo(second) === snapshot.quote
+        ? undefined
+        : 'triangulated legs must run base → pivot → quote';
+};
 const chainConnects = (snapshot) => {
     const [first, second] = snapshot.legs;
     if (first === undefined)
         return 'a snapshot needs at least one leg';
-    if (snapshot.pivot === undefined) {
-        return snapshot.legs.length === 1 && legFrom(first) === snapshot.base && legTo(first) === snapshot.quote ? undefined : 'a direct snapshot has one leg from base to quote';
-    }
+    if (snapshot.pivot === undefined)
+        return directChainIssue(snapshot, first);
     if (second === undefined || snapshot.legs.length !== 2)
         return 'a triangulated snapshot has exactly two legs';
-    return legFrom(first) === snapshot.base && legTo(first) === snapshot.pivot && legFrom(second) === snapshot.pivot && legTo(second) === snapshot.quote
-        ? undefined
-        : 'triangulated legs must run base → pivot → quote';
+    return triangulatedChainIssue(snapshot, first, second);
 };
 const SnapshotFields = {
     clauseDigest: Sha256,

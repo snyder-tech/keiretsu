@@ -2,8 +2,8 @@ import type { PartyRef } from '../core/PartyRef.ts';
 /**
  * Delivery semantics: idempotency and the per-pair hash chain.
  *
- * Delivery is at-least-once; the effect is exactly-once through the
- * idempotency table keyed by `(issuer, audience, bundleId)`:
+ * Delivery is at-least-once. Serialized calls track validated receipts through
+ * an idempotency table keyed by `(issuer, audience, bundleId)`:
  * - same key, same digest → `duplicate` (answer with the stored receipt);
  * - same key, different digest → {@link ReplayConflict}, never processed.
  *
@@ -13,8 +13,10 @@ import type { PartyRef } from '../core/PartyRef.ts';
  * - a fork (a second bundle at an occupied `seq`, or a `prevBundleDigest` that
  *   does not match) → {@link ChainFork}; the pair halts until a human resolves it.
  *
- * Receivers call {@link SequenceStore} `admit` before applying records and
- * `commit` only after their own durable write, then acknowledge.
+ * The memory store provides process-local receipt tracking, with no reservation
+ * between `admit` and `commit`. It does not apply business records or provide a
+ * durable transaction. Hosts own atomic application writes, durable idempotency
+ * and acknowledgment together.
  *
  * @since 0.1.0
  * @module
@@ -98,7 +100,7 @@ export class SequenceStore extends Context.Service<
   SequenceStore,
   {
     readonly admit: (position: ChainPosition) => Effect.Effect<Admission, ReplayConflict | ChainFork>;
-    /** Record an admitted bundle and its receipt text after the receiver's durable write. */
+    /** Record an admitted bundle and its receipt text; host application writes remain separate. */
     readonly commit: (input: { readonly position: ChainPosition; readonly receipt: string }) => Effect.Effect<void, ChainFork>;
     readonly status: (pair: { readonly issuer: string; readonly audience: PartyRef }) => Effect.Effect<PairStatus>;
   }

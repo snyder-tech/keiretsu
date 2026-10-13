@@ -76,6 +76,8 @@ export const screenSlices = (index) => {
     }
     return result;
 };
+const payerFundingSupported = (assessment) => assessment.agreementPredatesWork === 'yes' && assessment.economicRiskBearer === 'payer';
+const factsIndicateFunded = (assessment) => assessment.paymentContingentOnSuccess === 'no' && assessment.economicRiskBearer === 'payer' && assessment.performerRetainsSubstantialRights === 'no';
 /**
  * Funding assessment checks.
  *
@@ -90,10 +92,10 @@ export const screenFunding = (assessment) => {
     const decided = assessment.performerVerdict !== 'undetermined' || assessment.payerVerdict !== 'undetermined';
     if (decided && assessment.decisionId === undefined)
         issues.push(raise('funding.verdict-without-decision', subject, 'a funding verdict must cite the human decision that made it'));
-    const payerSupported = assessment.agreementPredatesWork === 'yes' && assessment.economicRiskBearer === 'payer';
+    const payerSupported = payerFundingSupported(assessment);
     if (assessment.payerVerdict === 'contract-research-candidate' && !payerSupported)
         issues.push(raise('funding.payer-candidate-unsupported', subject, 'payer contract research needs a prior agreement and payer risk'));
-    const factsSayFunded = assessment.paymentContingentOnSuccess === 'no' && assessment.economicRiskBearer === 'payer' && assessment.performerRetainsSubstantialRights === 'no';
+    const factsSayFunded = factsIndicateFunded(assessment);
     if (assessment.performerVerdict === 'not-funded' && factsSayFunded)
         issues.push(raise('funding.verdict-contradicts-facts', subject, 'the test answers point to funded research'));
     return issues;
